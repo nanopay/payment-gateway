@@ -32,7 +32,7 @@ wrangler queues create payment-queue
 wangler publish
 ```
 
-5. Add environments:
+4. Add environments:
 ```bash
 # A secure authentication token
 wrangler secret put AUTH_TOKEN
@@ -67,7 +67,7 @@ Success response [200]:
 }
 ```
 
-1. Send a small amount of nano (at least 0.000001 XNO) to the address before expiring and check your supabase table "transactions".
+6. Send a small amount of nano (at least 0.000001 XNO) to the address before expiring and check your supabase table "transactions".
 
 
 Important! Even if the initial request succeeds, the worker may fail if you don't configure your websocket node or subbase correctly. So check your Cloudflare Workers logs.
