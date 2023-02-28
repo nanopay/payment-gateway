@@ -30,7 +30,7 @@ export default {
 			return BadRequestException('Missing required fields');
 		}
 
-		await env.PAYMENT_QUEUE.send({
+		await env.PAYMENT_LISTENER_QUEUE.send({
 			to: parseNanoAddress(body.to),
 			expiresAt: parseTime(body.expiresAt)
 		});
@@ -47,30 +47,34 @@ export default {
 		const message: MessageBody = batch.messages[0].body;
 
 		try {
+			switch (batch.queue) {
+				case 'payment-listener-queue':
+					// Detect new payments
+					const timeout = message.expiresAt - Date.now();
+					const payment = await waitForPayment(env.NANO_WEBSOCKET_URL, message.to, timeout);
+					console.info("New Payment Received:", message.payment);
 
-			/*
-			 * By separating the processes, in the event of a db failure, the retry does
-			 * not generate a new connection to the websocket, but a new write to the db.
-			 */
-			if (message.payment) {
-				const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
-				const { error } = await supabase.from(TRANSACTIONS_TABLE).insert([message.payment]);
-				if (error) {
-					throw new Error(error.message);
-				}
-				console.info("New Payment Stored:", message.payment.hash)
-			} else {
-				const timeout = message.expiresAt - Date.now();
-				const payment = await waitForPayment(env.NANO_WEBSOCKET_URL, message.to, timeout);
-				console.info("New Payment Received:", message.payment);
-
-				// Send the payment to the next worker write to the db
-				await env.PAYMENT_QUEUE.send({
-					to: message.to,
-					payment
-				});
+					// Send the payment to the next worker write to the db
+					await env.PAYMENT_WRITE_QUEUE.send({
+						to: message.to,
+						payment
+					});
+					break;
+				case 'payment-write-queue':
+					// Write new payments to the db
+					if (message.payment) {
+						const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+						const { error } = await supabase.from(TRANSACTIONS_TABLE).insert([message.payment]);
+						if (error) {
+							throw new Error(error.message);
+						}
+						console.info("New Payment Stored:", message.payment.hash)
+					} else {
+						throw new Error('Missing payment');
+					}
+					break;
+				default:
 			}
-
 		} catch (e: any) {
 			if (e.message === 'PaymentTimeout') {
 				// only log the timeout

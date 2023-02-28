@@ -1,5 +1,6 @@
 export interface Environment {
-	PAYMENT_QUEUE: Queue;
+	PAYMENT_LISTENER_QUEUE: Queue;
+	PAYMENT_WRITE_QUEUE: Queue;
 	AUTH_TOKEN: string;
 	SUPABASE_URL: string;
 	SUPABASE_KEY: string;
