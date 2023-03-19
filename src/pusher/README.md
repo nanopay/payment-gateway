@@ -9,3 +9,18 @@ Some crypto utilities have been made compatible with edge computing.
 
 - md5: Build with `CryptoJS`
 - createHmac: `crypto.subtle.importKey` and `crypto.subtle.sign`
+
+### Usage
+
+```js
+pusherSend({
+    data: { message: 'Hello from EDGE' },
+	name: 'my-event',
+	channel: 'my-channel',
+	config: {
+	    appId: env.PUSHER_APP_ID,
+		key: env.PUSHER_KEY,
+		secret: env.PUSHER_SECRET
+	}
+});
+```
