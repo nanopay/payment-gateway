@@ -43,6 +43,11 @@ wrangler secret put SUPABASE_KEY
 
 # A Nano node websocket url
 wrangler secret put NANO_WEBSOCKET_URL
+
+# Your Pusher crendentials
+wrangler secret put PUSHER_APP_ID
+wrangler secret put PUSHER_KEY
+wrangler secret put PUSHER_SECRET
 ```
 
 5. Add an account to the queue:
