@@ -49,7 +49,8 @@ export async function waitForPayment(wsUrl: string, account: string, timeout: nu
                         from: data.message.block.account,
                         amount: rawToNano(data.message.amount),
                         hash: data.message.hash,
-                        to: data.message.block.link_as_account
+                        to: data.message.block.link_as_account,
+                        timestamp: Number(data.time)
                     });
                 }
             });

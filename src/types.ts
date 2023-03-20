@@ -18,6 +18,7 @@ export interface Payment {
     to: string;
     amount: number;
     hash: string;
+	timestamp: number;
 }
 
 export interface MessageBody {
