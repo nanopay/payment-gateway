@@ -23,3 +23,14 @@ compatibility_date = "2023-02-14"
  max_batch_timeout = 5 # seconds
  max_retries = 3
  dead_letter_queue = "payment-queue-dead"
+
+[[queues.producers]]
+  queue = "payment-pusher-queue"
+  binding = "PAYMENT_PUSHER_QUEUE"
+
+[[queues.consumers]]
+ queue = "payment-pusher-queue"
+ max_batch_size = 1
+ max_batch_timeout = 5 # seconds
+ max_retries = 3
+ dead_letter_queue = "payment-queue-dead"

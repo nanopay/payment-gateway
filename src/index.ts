@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { waitForPayment } from './nano-ws';
+import { pusherSend } from './pusher/pusher';
 import { BadRequestException, SuccessResponse, UnauthorizedException } from './responses';
 import { Environment, MessageBody } from './types';
 import { parseNanoAddress, parseTime } from './utils';
@@ -26,11 +27,12 @@ export default {
 
 		const body: MessageBody = await request.json();
 
-		if (body.to === undefined || body.expiresAt === undefined) {
+		if (body.invoiceId === undefined || body.to === undefined || body.expiresAt === undefined) {
 			return BadRequestException('Missing required fields');
 		}
 
 		await env.PAYMENT_LISTENER_QUEUE.send({
+			invoiceId: body.invoiceId.toString(),
 			to: parseNanoAddress(body.to),
 			expiresAt: parseTime(body.expiresAt)
 		});
@@ -54,24 +56,46 @@ export default {
 					const payment = await waitForPayment(env.NANO_WEBSOCKET_URL, message.to, timeout);
 					console.info("New Payment Received:", message.payment);
 
-					// Send the payment to the next worker write to the db
+					// Send the payment to the worker write to the db
 					await env.PAYMENT_WRITE_QUEUE.send({
+						to: message.to,
+						payment
+					});
+
+					// Send the payment to the worker to push to the channel
+					await env.PAYMENT_PUSHER_QUEUE.send({
+						invoiceId: message.invoiceId,
 						to: message.to,
 						payment
 					});
 					break;
 				case 'payment-write-queue':
 					// Write new payments to the db
-					if (message.payment) {
-						const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
-						const { error } = await supabase.from(TRANSACTIONS_TABLE).insert([message.payment]);
-						if (error) {
-							throw new Error(error.message);
-						}
-						console.info("New Payment Stored:", message.payment.hash)
-					} else {
+					if (!message.payment) {
 						throw new Error('Missing payment');
 					}
+					const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+					const { error } = await supabase.from(TRANSACTIONS_TABLE).insert([message.payment]);
+					if (error) {
+						throw new Error(error.message);
+					}
+					console.info("New Payment Stored:", message.payment.hash)
+					break;
+				case 'payment-pusher-queue':
+					// Send new payments to the pusher channel
+					if (!message.payment) {
+						throw new Error('Missing payment');
+					}
+					await pusherSend({
+						data: message.payment,
+						name: 'payment',
+						channel: message.invoiceId,
+						config: {
+							appId: env.PUSHER_APP_ID,
+							key: env.PUSHER_KEY,
+							secret: env.PUSHER_SECRET
+						}
+					});
 					break;
 				default:
 			}

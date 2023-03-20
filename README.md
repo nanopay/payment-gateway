@@ -60,6 +60,7 @@ curl --request POST \
   --header 'Authorization: Bearer my-secure-auth-token-here' \
   --header 'Content-Type: application/json' \
   --data '{
+        "invoiceId": 3443,
         "to": "nano_1ejctmay4x59368tnbgzsrj7tmzru8ghe6af4rewxtddejsu6d78esb9aar",
         "expiresAt": "2023-02-27T03:46:53.374Z"
     }'

@@ -1,6 +1,7 @@
 export interface Queues {
 	PAYMENT_LISTENER_QUEUE: Queue;
 	PAYMENT_WRITE_QUEUE: Queue;
+	PAYMENT_PUSHER_QUEUE: Queue;
 }
 export interface Environment extends Queues {
 	AUTH_TOKEN: string;
@@ -21,6 +22,7 @@ export interface Payment {
 
 export interface MessageBody {
 	to: string;
+	invoiceId: string;
     expiresAt: number;
 	payment?: Payment;
 }
