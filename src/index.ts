@@ -9,6 +9,11 @@ const TRANSACTIONS_TABLE = 'transactions';
 
 export default {
 	async fetch(request: Request, env: Environment): Promise<Response> {
+
+		if (request.method !== 'POST') {
+			return BadRequestException('Invalid method');
+		}		
+
 		const Authorization = request.headers.get('Authorization');
 
 		if (!Authorization) {
