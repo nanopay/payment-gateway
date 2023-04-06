@@ -21,9 +21,37 @@ export interface Payment {
 	timestamp: number;
 }
 
-export interface MessageBody {
-	to: string;
+export interface Service {
+	id: string;
+	name: string;
+	display_name: string;
+	description: string;
+	avatar_url: string;
+	website: string | null;
+	contact_email: string | null;
+}
+
+export interface Invoice {
+	id: string;
+	created_at: string;
+	expires_at: string;
+	price: number;
+	currency: string;
+	recipient_address: string;
+	pay_address: string;
+	status: string;
+	title: string;
+	description: string;
+	metadata: string;
+	webhook_url: string;
+	service: Service;
+}
+
+export interface RequestBody {
 	invoiceId: string;
-    expiresAt: number;
+}
+
+export interface MessageBody {
+	invoice: Invoice;
 	payment?: Payment;
 }

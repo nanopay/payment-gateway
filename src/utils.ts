@@ -16,13 +16,6 @@ export const rawToNano = (raw: string) => {
     return Number(fixedAmount);
 }
 
-export const parseNanoAddress = (address: string) => {
-    if (!checkAddress(address)) {
-        throw new Error('Invalid Nano address');
-    }
-    return address.replace('xno_', 'nano_');
-}
-
 export const parseTime = (time: string | number) => {
     const date = new Date(time);
     if (isNaN(date.getTime())) {
