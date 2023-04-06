@@ -26,9 +26,8 @@ async function subscribe(wsUrl: string, account: string) {
         "action": "subscribe",
         "topic": "confirmation",
         "options": {
-            "all_local_accounts": true,
             "accounts": [account]
-          }
+        }
     }
 
     // Now you can send and receive messages like before.
