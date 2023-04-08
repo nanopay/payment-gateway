@@ -43,7 +43,7 @@ export async function waitForPayment(wsUrl: string, account: string, timeout: nu
             ws.addEventListener('message', msg => {
                 const data = JSON.parse(msg.data as string);
                 if (data.message?.block?.subtype === 'send') {
-                    (ws as WebSocket).close();
+                    ws.close();
                     return resolve({
                         from: data.message.block.account,
                         amount: rawToNano(data.message.amount),
@@ -53,8 +53,11 @@ export async function waitForPayment(wsUrl: string, account: string, timeout: nu
                     });
                 }
             });
+            ws.addEventListener('close', () => {
+                reject(new Error("WebSocketClosed"));
+            });
             sleep(timeout).then(() => {
-                (ws as WebSocket).close();
+                ws.close();
                 reject(new Error("PaymentTimeout"));
             });
         } catch (err) {
