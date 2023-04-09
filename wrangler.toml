@@ -33,4 +33,26 @@ compatibility_date = "2023-02-14"
  max_batch_size = 1
  max_batch_timeout = 5 # seconds
  max_retries = 3
- dead_letter_queue = "payment-queue-dead"
+ dead_letter_queue = "payment-pusher-queue-dead"
+
+[[queues.producers]]
+  queue = "hook-delivery-queue"
+  binding = "HOOK_DELIVERY_QUEUE"
+
+[[queues.consumers]]
+ queue = "hook-delivery-queue"
+ max_batch_size = 1
+ max_batch_timeout = 5 # seconds
+ max_retries = 3
+ dead_letter_queue = "hook-queue-dead"
+
+[[queues.producers]]
+  queue = "hook-delivery-write-queue"
+  binding = "HOOK_DELIVERY_WRITE_QUEUE"
+
+[[queues.consumers]]
+ queue = "hook-delivery-write-queue"
+ max_batch_size = 1
+ max_batch_timeout = 5 # seconds
+ max_retries = 3
+ dead_letter_queue = "hook-queue-dead"

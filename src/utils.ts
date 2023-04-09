@@ -25,3 +25,11 @@ export const parseTime = (time: string | number) => {
 }
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const getHeaders = (headers: Headers) => {
+    const result: Record<string, string> = {};
+    headers.forEach((value, key) => {
+        result[key] = value;
+    });
+    return result;
+}
