@@ -1,5 +1,5 @@
 import { Payment } from "./types";
-import { rawToNano, sleep } from "./utils";
+import { rawToNano } from "./utils";
 
 async function subscribe(wsUrl: string, account: string) {
     // Make a fetch request including `Upgrade: websocket` header.
@@ -39,12 +39,29 @@ async function subscribe(wsUrl: string, account: string) {
 export async function waitForPayment(wsUrl: string, account: string, timeout: number): Promise<Payment> {
     return new Promise(async (resolve, reject) => {
         try {
-            const ws = await subscribe(wsUrl, account);
-            ws.addEventListener('message', msg => {
+
+            let isClosed = false;
+            let timeoutId: any;
+
+            const close = () => {
+                isClosed = true;
+                ws.close();
+                if (timeoutId) {
+                    clearInterval(timeoutId)
+                }
+            }
+
+            const handleClose = () => {
+                if (!isClosed) {
+                    reject(new Error("WebSocketClosed"));
+                }
+            }
+
+            const handlePayment = (msg: MessageEvent) => {
                 const data = JSON.parse(msg.data as string);
                 if (data.message?.block?.subtype === 'send') {
-                    ws.close();
-                    return resolve({
+                    close();
+                    resolve({
                         from: data.message.block.account,
                         amount: rawToNano(data.message.amount),
                         hash: data.message.hash,
@@ -52,14 +69,18 @@ export async function waitForPayment(wsUrl: string, account: string, timeout: nu
                         timestamp: Number(data.time)
                     });
                 }
-            });
-            ws.addEventListener('close', () => {
-                reject(new Error("WebSocketClosed"));
-            });
-            sleep(timeout).then(() => {
-                ws.close();
+            }
+
+            const ws = await subscribe(wsUrl, account);
+
+            ws.addEventListener('message', handlePayment);
+            ws.addEventListener('close', handleClose);
+
+            timeoutId = setTimeout(() => {
+                close();
                 reject(new Error("PaymentTimeout"));
-            });
+            }, timeout)
+
         } catch (err) {
             reject(err);
         }

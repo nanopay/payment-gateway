@@ -24,8 +24,6 @@ export const parseTime = (time: string | number) => {
     return date.getTime();
 }
 
-export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const getHeaders = (headers: Headers) => {
     const result: Record<string, string> = {};
     headers.forEach((value, key) => {
