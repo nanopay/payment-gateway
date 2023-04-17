@@ -5,7 +5,7 @@ import { BadRequestException, SuccessResponse, UnauthorizedException } from './r
 import { Environment, MessageBody, RequestBody, WebhookDelivery } from './types';
 import { getHeaders, parseTime } from './utils';
 
-const TRANSACTIONS_TABLE = 'transactions';
+const PAYMENTS_TABLE = 'payments';
 const INVOICES_TABLE = 'invoices';
 const HOOK_RETRY = false;
 const HOOK_DELIVERIES_TABLE = 'hook_deliveries'
@@ -125,7 +125,10 @@ export default {
 						throw new Error('Missing hooks');
 					}
 
-					const { error } = await supabase.from(TRANSACTIONS_TABLE).insert([payment]);
+					const { error } = await supabase.from(PAYMENTS_TABLE).insert([{
+						invoice_id: invoice.id,
+						...payment
+					}]);
 					if (error) {
 						throw new Error(error.message);
 					}
