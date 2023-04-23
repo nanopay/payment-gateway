@@ -2,10 +2,14 @@ import { Payment } from "./types";
 import { rawToNano } from "./utils";
 
 async function subscribe(wsUrl: string, account: string) {
+
+    // Using HTTP instead WS to work with fetch 
+    const websocketURL = wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+
     // Make a fetch request including `Upgrade: websocket` header.
     // The Workers Runtime will automatically handle other requirements
     // of the WebSocket protocol, like the Sec-WebSocket-Key header.
-    let resp = await fetch(wsUrl, {
+    let resp = await fetch(websocketURL, {
         headers: {
             Upgrade: 'websocket',
         },
