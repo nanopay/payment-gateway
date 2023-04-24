@@ -140,7 +140,7 @@ export default {
 					})
 
 					for (const hook of hooks) {
-						if (hook.event_types.includes('invoice.paid')) {
+						if (hook.active && hook.event_types.includes('invoice.paid')) {
 							// Send the payment to the worker to delivery the webhook
 							await env.HOOK_DELIVERY_QUEUE.send({
 								invoice,

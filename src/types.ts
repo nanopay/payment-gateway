@@ -59,6 +59,8 @@ export interface Hook {
 	headers: Record<string, string>;
 	event_types: string[];
 	description: string | null;
+	active: boolean
+	created_at: string
 }
 
 export interface WebhookDelivery {
