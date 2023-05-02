@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-import { waitForPayment } from './nano-ws';
+import { waitForPayment } from './nano/ws';
 import { pusherSend } from './pusher/pusher';
 import { BadRequestException, SuccessResponse, UnauthorizedException } from './responses';
 import { Environment, MessageBody, RequestBody, WebhookDelivery } from './types';
-import { getHeaders, parseTime } from './utils';
+import { getHeaders, parseTime, rawToNano } from './utils';
+import RPC from './nano/rpc';
+import { deriveSecretKey } from 'nanocurrency';
 
 const PAYMENTS_TABLE = 'payments';
 const INVOICES_TABLE = 'invoices';
@@ -44,7 +46,7 @@ export default {
 
 		const { data: invoice, error } = await supabase
 			.from(INVOICES_TABLE)
-			.select(`id,created_at,expires_at,price,currency,recipient_address,status,pay_address,status,title,description,metadata,service:services(name, display_name, avatar_url, description, id, website, contact_email, hooks(*))`)
+			.select(`id,created_at,expires_at,index,price,currency,recipient_address,status,pay_address,status,title,description,metadata,service:services(name, display_name, avatar_url, description, id, website, contact_email, hooks(*))`)
 			.eq('id', body.invoiceId)
 			.single();
 
@@ -97,14 +99,25 @@ export default {
 				case 'payment-listener-queue':
 					// Detect new payments
 					const timeout = parseTime(invoice.expires_at) - Date.now();
-					const newPayment = await waitForPayment(env.NANO_WEBSOCKET_URL, invoice.pay_address, timeout);
+					const { from, to, amount: amountRaws, hash, timestamp } = await waitForPayment(env.NANO_WEBSOCKET_URL, invoice.pay_address, timeout);
 
-					if (newPayment.amount < MIN_AMOUNT) {
-						console.info("Payment amount too low:", newPayment.amount);
+					const amount = rawToNano(amountRaws);
+
+					if (amount < MIN_AMOUNT) {
+						console.info("Payment amount too low:", amount);
 						return
 					}
 
-					console.info("New Payment Received:", newPayment.hash);
+					console.info("New Payment:", hash);
+
+					const newPayment = {
+						from,
+						to,
+						amount,
+						hash,
+						timestamp,
+						amountRaws
+					}
 
 					// Send the payment to the worker write to the db
 					await env.PAYMENT_WRITE_QUEUE.send({
@@ -120,7 +133,14 @@ export default {
 						service,
 						payment: newPayment,
 					});
+
+					await env.PAYMENT_RECEIVER_QUEUE.send({
+						invoice,
+						payment: newPayment
+					});
+
 					break;
+
 				case 'payment-write-queue':
 					// Write new payments to the db
 
@@ -139,12 +159,7 @@ export default {
 					if (error) {
 						throw new Error(error.message);
 					}
-					console.info("New Payment Stored:", payment.hash, {
-						invoice,
-						payment,
-						service,
-						hooks
-					})
+					console.info("New Payment Stored:", payment.hash);	
 
 					for (const hook of hooks) {
 						if (hook.active && hook.event_types.includes('invoice.paid')) {
@@ -158,6 +173,31 @@ export default {
 							})
 						}
 					}
+
+					break;
+				case 'payment-receiver-queue':
+					// Receive nano transaction
+					if (!payment) {
+						throw new Error('Missing payment');
+					}
+					if (!invoice) {
+						throw new Error('Missing invoice');
+					}
+
+					const rpc = new RPC({
+						rpcURLs: env.RPC_URLS.split(','),
+						workerURLs: env.WORKER_URLS.split(','),
+						representative: env.REPRESENTATIVE,
+					});
+
+					const secretKey = deriveSecretKey(env.SEED, invoice.index);
+
+					const { hash: paymentHash } = await rpc.receive(secretKey, {
+						blockHash: payment.hash,
+						amount: payment.amountRaws,
+					});
+
+					console.info("New Payment Received:", paymentHash);
 
 					break;
 				case 'payment-pusher-queue':
