@@ -9,6 +9,7 @@ const PAYMENTS_TABLE = 'payments';
 const INVOICES_TABLE = 'invoices';
 const HOOK_RETRY = false;
 const HOOK_DELIVERIES_TABLE = 'hook_deliveries'
+const MIN_AMOUNT = 0.00001
 
 export default {
 	async fetch(request: Request, env: Environment): Promise<Response> {
@@ -97,6 +98,12 @@ export default {
 					// Detect new payments
 					const timeout = parseTime(invoice.expires_at) - Date.now();
 					const newPayment = await waitForPayment(env.NANO_WEBSOCKET_URL, invoice.pay_address, timeout);
+
+					if (newPayment.amount < MIN_AMOUNT) {
+						console.info("Payment amount too low:", newPayment.amount);
+						return
+					}
+
 					console.info("New Payment Received:", newPayment.hash);
 
 					// Send the payment to the worker write to the db
