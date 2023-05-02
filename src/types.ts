@@ -5,6 +5,7 @@ export interface Queues {
 	HOOK_DELIVERY_QUEUE: Queue;
 	HOOK_DELIVERY_WRITE_QUEUE: Queue;
 	PAYMENT_RECEIVER_QUEUE: Queue;
+	PAYMENT_SENDER_QUEUE: Queue;
 }
 export interface Environment extends Queues {
 	AUTH_TOKEN: string;
@@ -27,6 +28,8 @@ export interface Payment {
 	amountRaws: string;
     hash: string;
 	timestamp: number;
+	receive_tx?: string;  
+	send_tx?: string;
 }
 
 export interface Service {
