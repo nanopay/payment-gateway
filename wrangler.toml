@@ -11,7 +11,7 @@ compatibility_date = "2023-02-14"
  max_batch_size = 1
  max_batch_timeout = 5 # seconds
  max_retries = 3
- dead_letter_queue = "payment-queue-dead"
+ dead_letter_queue = "payment-listener-queue-dead"
 
 [[queues.producers]]
   queue = "payment-write-queue"
@@ -22,7 +22,7 @@ compatibility_date = "2023-02-14"
  max_batch_size = 1
  max_batch_timeout = 5 # seconds
  max_retries = 3
- dead_letter_queue = "payment-queue-dead"
+ dead_letter_queue = "payment-write-queue-dead"
 
 [[queues.producers]]
   queue = "payment-pusher-queue"
@@ -44,7 +44,7 @@ compatibility_date = "2023-02-14"
  max_batch_size = 1
  max_batch_timeout = 5 # seconds
  max_retries = 3
- dead_letter_queue = "hook-queue-dead"
+ dead_letter_queue = "hook-delivery-queue-dead"
 
 [[queues.producers]]
   queue = "hook-delivery-write-queue"
@@ -55,7 +55,7 @@ compatibility_date = "2023-02-14"
  max_batch_size = 1
  max_batch_timeout = 5 # seconds
  max_retries = 3
- dead_letter_queue = "hook-queue-dead"
+ dead_letter_queue = "hook-delivery-write-queue-dead"
 
 [[queues.producers]]
   queue = "payment-receiver-queue"
@@ -66,4 +66,4 @@ compatibility_date = "2023-02-14"
   max_batch_size = 1
   max_batch_timeout = 5 # seconds
   max_retries = 0
-  dead_letter_queue = "hook-queue-dead"
+  dead_letter_queue = "receiver-queue-dead"
