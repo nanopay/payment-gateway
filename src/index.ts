@@ -94,6 +94,12 @@ export default {
 
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
+		const rpc = new RPC({
+			rpcURLs: env.RPC_URLS.split(','),
+			workerURLs: env.WORKER_URLS.split(','),
+			representative: env.REPRESENTATIVE,
+		});
+
 		try {
 			switch (batch.queue) {
 				case 'payment-listener-queue':
@@ -159,7 +165,7 @@ export default {
 					if (error) {
 						throw new Error(error.message);
 					}
-					console.info("New Payment Stored:", payment.hash);	
+					console.info("New Payment Stored:", payment.hash);
 
 					for (const hook of hooks) {
 						if (hook.active && hook.event_types.includes('invoice.paid')) {
@@ -184,22 +190,48 @@ export default {
 						throw new Error('Missing invoice');
 					}
 
-					const rpc = new RPC({
-						rpcURLs: env.RPC_URLS.split(','),
-						workerURLs: env.WORKER_URLS.split(','),
-						representative: env.REPRESENTATIVE,
-					});
-
 					const secretKey = deriveSecretKey(env.SEED, invoice.index);
 
-					const { hash: paymentHash } = await rpc.receive(secretKey, {
-						blockHash: payment.hash,
+					const { hash: paymentReceiveHash } = await rpc.receive(secretKey, {
+						link: payment.hash,
 						amount: payment.amountRaws,
 					});
 
-					console.info("New Payment Received:", paymentHash);
+					console.info("New Payment Received:", paymentReceiveHash);
+
+					await env.PAYMENT_SENDER_QUEUE.send({
+						invoice,
+						payment: {
+							...payment,
+							receive_tx: paymentReceiveHash
+						}
+					})
 
 					break;
+				case 'payment-sender-queue':
+					// Send nano transaction to recipient
+
+					if (!invoice) {
+						throw new Error('Missing invoice');
+					}
+					if (!payment) {
+						throw new Error('Missing payment');
+					}
+					if (!payment.receive_tx) {
+						throw new Error('Missing receive_tx');
+					}
+
+					const _secretKey = deriveSecretKey(env.SEED, invoice.index);
+
+					const { hash: paymentSendHash } = await rpc.sendAll(_secretKey, {
+						link: invoice.recipient_address,
+						previous: payment.receive_tx
+					});
+
+					console.info("New Payment Sent:", paymentSendHash);
+
+					break;
+
 				case 'payment-pusher-queue':
 					// Send new payments to the pusher channel
 					if (!payment) {
