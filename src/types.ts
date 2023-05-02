@@ -4,6 +4,7 @@ export interface Queues {
 	PAYMENT_PUSHER_QUEUE: Queue;
 	HOOK_DELIVERY_QUEUE: Queue;
 	HOOK_DELIVERY_WRITE_QUEUE: Queue;
+	PAYMENT_RECEIVER_QUEUE: Queue;
 }
 export interface Environment extends Queues {
 	AUTH_TOKEN: string;
@@ -13,12 +14,17 @@ export interface Environment extends Queues {
 	PUSHER_APP_ID: string;
 	PUSHER_KEY: string;
 	PUSHER_SECRET: string;
+	SEED: string;
+	REPRESENTATIVE: string;
+	RPC_URLS: string;
+	WORKER_URLS: string;
 }
 
 export interface Payment {
     from: string;
     to: string;
     amount: number;
+	amountRaws: string;
     hash: string;
 	timestamp: number;
 }
@@ -45,6 +51,7 @@ export interface Invoice {
 	title: string;
 	description: string;
 	metadata: string;
+	index: number;
 }
 
 export interface RequestBody {

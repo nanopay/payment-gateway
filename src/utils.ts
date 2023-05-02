@@ -1,4 +1,4 @@
-import { Unit, convert, checkAddress } from 'nanocurrency';
+import { Unit, convert } from 'nanocurrency';
 
 const MAX_DECIMALS = 6;
 
