@@ -29,6 +29,9 @@ interface ProcessResponse {
     hash: string;
 }
 
+const SEND_DIFFICULTY = 'fffffff800000000';
+const RECEIVE_DIFFICULTY = 'fffffe0000000000';
+
 const postJsonWithTimeout = async <T>(url: string, body: any, timeout = 30000): Promise<T> => {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
@@ -133,11 +136,9 @@ export default class RPC {
             work: null
         })
 
-        const difficulty = 'fffffe0000000000';
-
         const frontier = previous || derivePublicKey(secretKey);
 
-        const { work } = await this.workGenerate(frontier, difficulty);
+        const { work } = await this.workGenerate(frontier, RECEIVE_DIFFICULTY);
 
         if (!work) {
             throw new Error('No work');
@@ -146,7 +147,7 @@ export default class RPC {
         const isValidWork = validateWork({
             work,
             blockHash: frontier,
-            threshold: difficulty
+            threshold: RECEIVE_DIFFICULTY
         });
 
         if (!isValidWork) {
@@ -174,11 +175,9 @@ export default class RPC {
             work: null
         })
 
-        const difficulty = 'fffffff800000000';
-
         const frontier = data.previous;
 
-        const { work } = await this.workGenerate(frontier, difficulty);
+        const { work } = await this.workGenerate(frontier, SEND_DIFFICULTY);
 
         if (!work) {
             throw new Error('No work');
@@ -187,7 +186,7 @@ export default class RPC {
         const isValidWork = validateWork({
             work,
             blockHash: frontier,
-            threshold: difficulty
+            threshold: SEND_DIFFICULTY
         });
 
         if (!isValidWork) {
