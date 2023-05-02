@@ -1,5 +1,10 @@
-import { Payment } from "./types";
-import { rawToNano } from "./utils";
+interface SendEvent {
+    from: string;
+    to: string;
+    amount: string;
+    hash: string;
+    timestamp: number;
+}
 
 async function subscribe(wsUrl: string, account: string) {
 
@@ -40,7 +45,7 @@ async function subscribe(wsUrl: string, account: string) {
     return ws;
 }
 
-export async function waitForPayment(wsUrl: string, account: string, timeout: number): Promise<Payment> {
+export async function waitForPayment(wsUrl: string, account: string, timeout: number): Promise<SendEvent> {
     return new Promise(async (resolve, reject) => {
         try {
 
@@ -67,7 +72,7 @@ export async function waitForPayment(wsUrl: string, account: string, timeout: nu
                     close();
                     resolve({
                         from: data.message.block.account,
-                        amount: rawToNano(data.message.amount),
+                        amount: data.message.amount,
                         hash: data.message.hash,
                         to: data.message.block.link_as_account,
                         timestamp: Number(data.time)
