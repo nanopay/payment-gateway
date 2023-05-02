@@ -8,9 +8,14 @@ interface RPCProps {
 }
 
 interface ReceiveData {
-    blockHash: string;
+    link: string;
     amount: string;
     previous?: string;
+}
+
+interface SendData {
+    link: string;
+    previous: string;
 }
 
 interface WorkGenerateResponse {
@@ -124,13 +129,54 @@ export default class RPC {
             previous,
             representative: this.representative,
             balance,
-            link: data.blockHash,
+            link: data.link,
             work: null
         })
 
         const difficulty = 'fffffe0000000000';
 
         const frontier = previous || derivePublicKey(secretKey);
+
+        const { work } = await this.workGenerate(frontier, difficulty);
+
+        if (!work) {
+            throw new Error('No work');
+        }
+
+        const isValidWork = validateWork({
+            work,
+            blockHash: frontier,
+            threshold: difficulty
+        });
+
+        if (!isValidWork) {
+            throw new Error('Invalid work');
+        }
+
+        const processed = await this.process({
+            ...block,
+            work
+        });
+
+        if (processed.hash !== hash) {
+            throw new Error('Block hash mismatch');
+        }
+
+        return { hash };
+    }
+
+    async sendAll(secretKey: string, data: SendData) {
+        const { block, hash } = createBlock(secretKey, {
+            previous: data.previous,
+            representative: this.representative,
+            balance: '0',
+            link: data.link,
+            work: null
+        })
+
+        const difficulty = 'fffffff800000000';
+
+        const frontier = data.previous;
 
         const { work } = await this.workGenerate(frontier, difficulty);
 
