@@ -6,93 +6,104 @@ interface SendEvent {
     timestamp: number;
 }
 
-async function subscribe(wsUrl: string, account: string) {
+export default class NanoWebsocket {
 
-    // Using HTTP instead WS to work with fetch 
-    const websocketURL = wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+    wsURL: string;
+    ws: WebSocket | null = null;
+    listeners: ((data: SendEvent) => void)[] = []
+    closedByClient = false;
 
-    // Make a fetch request including `Upgrade: websocket` header.
-    // The Workers Runtime will automatically handle other requirements
-    // of the WebSocket protocol, like the Sec-WebSocket-Key header.
-    let resp = await fetch(websocketURL, {
-        headers: {
-            Upgrade: 'websocket',
-        },
-    });
-
-    // If the WebSocket handshake completed successfully, then the
-    // response has a `webSocket` property.
-    let ws = resp.webSocket;
-    if (!ws) {
-        throw new Error("server didn't accept WebSocket");
+    constructor(wsUrl: string) {
+        // Using HTTP instead WS to work with fetch 
+        this.wsURL = wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
     }
 
-    // Call accept() to indicate that you'll be handling the socket here
-    // in JavaScript, as opposed to returning it on to a client.
-    ws.accept();
+    async connect() {
 
-    const confirmation_subscription = {
-        "action": "subscribe",
-        "topic": "confirmation",
-        "options": {
-            "accounts": [account]
+        if (this.ws) {
+            return this.ws;
         }
-    }
 
-    // Now you can send and receive messages like before.
-    ws.send(JSON.stringify(confirmation_subscription));
+        // Make a fetch request including `Upgrade: websocket` header.
+        // The Workers Runtime will automatically handle other requirements
+        // of the WebSocket protocol, like the Sec-WebSocket-Key header.
+        let resp = await fetch(this.wsURL, {
+            headers: {
+                Upgrade: 'websocket',
+            },
+        });
 
-    return ws;
-}
+        if (!resp.webSocket) {
+            throw new Error("server didn't accept WebSocket");
+        }
 
-export async function waitForPayment(wsUrl: string, account: string, timeout: number): Promise<SendEvent> {
-    return new Promise(async (resolve, reject) => {
-        try {
+        // If the WebSocket handshake completed successfully, then the
+        // response has a `webSocket` property.
+        this.ws = resp.webSocket;
 
-            let isClosed = false;
-            let timeoutId: any;
+        // Call accept() to indicate that you'll be handling the socket here
+        // in JavaScript, as opposed to returning it on to a client.
+        this.ws.accept();
 
-            const close = () => {
-                isClosed = true;
-                ws.close();
-                if (timeoutId) {
-                    clearInterval(timeoutId)
-                }
-            }
-
-            const handleClose = () => {
-                if (!isClosed) {
-                    reject(new Error("WebSocketClosed"));
-                }
-            }
-
-            const handlePayment = (msg: MessageEvent) => {
-                const data = JSON.parse(msg.data as string);
-                if (data.message?.block?.subtype === 'send') {
-                    close();
-                    resolve({
+        this.ws.addEventListener('message', (msg) => {
+            const data = JSON.parse(msg.data as string);
+            if (data.message?.block?.subtype === 'send') {
+                this.listeners.forEach((listener) => {
+                    listener({
                         from: data.message.block.account,
                         amount: data.message.amount,
                         hash: data.message.hash,
                         to: data.message.block.link_as_account,
                         timestamp: Number(data.time)
                     });
-                }
+                })
+
             }
+        })
 
-            const ws = await subscribe(wsUrl, account);
+        return this.ws;
+    }
 
-            ws.addEventListener('message', handlePayment);
-            ws.addEventListener('close', handleClose);
+    async subscribe(account: string) {
 
-            timeoutId = setTimeout(() => {
-                close();
-                reject(new Error("PaymentTimeout"));
-            }, timeout)
+        this.check();
 
-        } catch (err) {
-            reject(err);
+        const confirmation_subscription = {
+            "action": "subscribe",
+            "topic": "confirmation",
+            "options": {
+                "accounts": [account]
+            }
         }
-    })
-}
 
+        // Now you can send and receive messages like before.
+        this.ws?.send(JSON.stringify(confirmation_subscription));
+    }
+
+    onError(handler: EventListenerOrEventListenerObject<ErrorEvent>) {
+        this.check();
+        this.ws?.addEventListener('error', handler)
+    }
+
+    onClose(handler: EventListenerOrEventListenerObject<CloseEvent>) {
+        this.check();
+        this.ws?.addEventListener('close', (handler))
+    }
+
+    onPayment(handler: (data: SendEvent) => void) {
+        this.listeners.push(handler)
+    }
+
+    close() {
+        this.check();
+        this.closedByClient = true;
+        this.ws?.close();
+    }
+
+    check() {
+        if (!this.ws) {
+            throw new Error("WebSocket is not initialized");
+        }
+    }
+
+}
