@@ -53,12 +53,13 @@ export default class RPC {
     rpcURLs: string[];
     workerURLs: string[];
     representative: string;
+    timeout: number;
 
     constructor({
         rpcURLs,
         workerURLs,
         representative,
-        timeout = 15000
+        timeout = 30000
     }: RPCProps) {
         this.rpcURLs = rpcURLs instanceof Array ? rpcURLs : [rpcURLs];
         if (this.rpcURLs.length < 0) {
@@ -86,12 +87,13 @@ export default class RPC {
         if (!checkAddress(this.representative)) {
             throw new Error(`Invalid representative address: ${representative}`);
         }
+        this.timeout = timeout;
     }
 
     async postRPC<TRPCResponse = unknown>(data: any, urls = this.rpcURLs, retry = 0): Promise<TRPCResponse> {
         const url = urls[retry];
         try {
-            const response = await postJsonWithTimeout<TRPCResponse>(url, data);
+            const response = await postJsonWithTimeout<TRPCResponse>(url, data, this.timeout);
             if (response instanceof Object && "error" in response) {
                 throw new Error(`RPC error: ${response.error}`);
             }
