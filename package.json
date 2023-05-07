@@ -10,7 +10,8 @@
   },
   "private": true,
   "scripts": {
-    "deploy": "wrangler publish"
+    "deploy": "wrangler publish",
+    "dev": "wrangler dev --local --port 44555"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.8.0",
