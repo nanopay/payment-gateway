@@ -100,4 +100,5 @@ export interface MessageBody {
 	hook: Hook;
 	hook_type: string;
 	hook_delivery?: WebhookDelivery;
+	payments?: Payment[];
 }

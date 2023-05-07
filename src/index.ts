@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-import { waitForPayment } from './nano/ws';
 import { pusherSend } from './pusher/pusher';
 import { BadRequestException, SuccessResponse, UnauthorizedException } from './responses';
-import { Environment, MessageBody, RequestBody, WebhookDelivery } from './types';
+import { Environment, MessageBody, Payment, RequestBody, WebhookDelivery } from './types';
 import { getHeaders, parseTime, rawToNano } from './utils';
 import RPC from './nano/rpc';
 import { deriveSecretKey } from 'nanocurrency';
+import NanoWebsocket from './nano/ws';
 
 const PAYMENTS_TABLE = 'payments';
 const INVOICES_TABLE = 'invoices';
@@ -91,6 +91,7 @@ export default {
 		const service = message.service;
 		const hooks = message.hooks;
 		const payment = message.payment;
+		const payments = message.payments;
 
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
@@ -105,45 +106,91 @@ export default {
 				case 'payment-listener-queue':
 					// Detect new payments
 					const timeout = parseTime(invoice.expires_at) - Date.now();
-					const { from, to, amount: amountRaws, hash, timestamp } = await waitForPayment(env.NANO_WEBSOCKET_URL, invoice.pay_address, timeout);
+					let timeoutId: any;
+					let _payments: Payment[] = [];
+					
+					const nanoWS = new NanoWebsocket(env.NANO_WEBSOCKET_URL);
 
-					const amount = rawToNano(amountRaws);
+					await nanoWS.connect();
 
-					if (amount < MIN_AMOUNT) {
-						console.info("Payment amount too low:", amount);
-						return
-					}
+					nanoWS.subscribe(invoice.pay_address);
 
-					console.info("New Payment:", hash);
+					nanoWS.onError((e) => {
+						if (timeoutId) {
+							clearTimeout(timeoutId)
+						}
+						throw new Error(e.message)
+					})
 
-					const newPayment = {
-						from,
-						to,
-						amount,
-						hash,
-						timestamp,
-						amountRaws
-					}
+					nanoWS.onClose((e) => {
+						if (timeoutId) {
+							clearTimeout(timeoutId)
+						}
+						
+						if (e.code !== 1000 || !nanoWS.closedByClient) {
+							throw new Error(`Websocket connection closed: ${env.NANO_WEBSOCKET_URL} ${e.reason ? ', ' + e.reason : ''}`)
+						}
+					})
 
-					// Send the payment to the worker write to the db
-					await env.PAYMENT_WRITE_QUEUE.send({
-						invoice,
-						service,
-						hooks,
-						payment: newPayment
-					});
+					nanoWS.onPayment(async (payment) => {
 
-					// Send the payment to the worker to push to the channel
-					await env.PAYMENT_PUSHER_QUEUE.send({
-						invoice,
-						service,
-						payment: newPayment,
-					});
+						if (payment.from === invoice.pay_address) {
+							return
+						}
 
-					await env.PAYMENT_RECEIVER_QUEUE.send({
-						invoice,
-						payment: newPayment
-					});
+						const newPayment = {
+							...payment,
+							amountRaws: payment.amount,
+							amount: rawToNano(payment.amount)
+						}
+
+						if (newPayment.amount < MIN_AMOUNT) {
+							console.info("Payment amount too low:", newPayment.amount);
+							return
+						}
+
+						console.info("New Payment:", payment.hash);
+
+						_payments.push(newPayment);
+
+						const paid_total = _payments.reduce((acc, payment) => {
+							return acc + payment.amount;
+						}, 0);
+
+						if (paid_total >= invoice.price) {
+							nanoWS.close();
+						}
+
+						// Send the payment to the worker write to the db
+						await env.PAYMENT_WRITE_QUEUE.send({
+							invoice,
+							service,
+							hooks,
+							payment: newPayment
+						});
+
+						// Send the payment to the worker to push to the channel
+						await env.PAYMENT_PUSHER_QUEUE.send({
+							invoice,
+							payments: _payments
+						});
+
+						//
+						await env.PAYMENT_RECEIVER_QUEUE.send({
+							invoice,
+							payment: newPayment
+						});
+					})
+
+					const sleepTimeout = () => new Promise(resolve => {
+						timeoutId = setTimeout(() => {
+							nanoWS.close();
+							console.info(`Invoice ${invoice.id} timeout`)
+							resolve(true);
+						}, timeout);
+					})
+
+					await sleepTimeout();
 
 					break;
 
@@ -234,12 +281,27 @@ export default {
 
 				case 'payment-pusher-queue':
 					// Send new payments to the pusher channel
-					if (!payment) {
-						throw new Error('Missing payment');
+					if (!payments) {
+						throw new Error('Missing payments');
 					}
+					if (!invoice) {
+						throw new Error('Missing invoice');
+					}
+
+					const paid_total = payments.reduce((acc, payment) => {
+						return acc + payment.amount;
+					}, 0);
+
+					const remaining = invoice.price - paid_total;
+
 					await pusherSend({
-						data: payment,
-						name: 'payment',
+						data: {
+							payments,
+							price: invoice.price,
+							paid_total,
+							remaining,
+						},
+						name: remaining > 0 ? 'invoice.partially_paid' : 'invoice.paid',
 						channel: invoice.id,
 						config: {
 							appId: env.PUSHER_APP_ID,
