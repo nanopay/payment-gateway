@@ -3,6 +3,7 @@ import NanoRPC, { NanoRPCProps } from "./rpc";
 import { RECEIVE_DIFFICULTY, SEND_DIFFICULTY } from "./constants";
 
 interface NanoWalletProps extends NanoRPCProps {
+    privateKey: string;
     representative: string;
 }
 
@@ -19,14 +20,17 @@ interface SendData {
 
 export default class NanoWallet {
     rpc: NanoRPC;
+    privateKey: string;
     representative: string;
 
     constructor({
+        privateKey,
         rpcURLs,
         workerURLs,
         timeout = 30000,
         representative,
     }: NanoWalletProps) {
+        this.privateKey = privateKey;
         this.rpc = new NanoRPC({ rpcURLs, workerURLs, timeout });
         this.representative = representative;
         if (!checkAddress(this.representative)) {
@@ -34,12 +38,12 @@ export default class NanoWallet {
         }
     }
 
-    async receive(secretKey: string, data: ReceiveData) {
+    async receive(data: ReceiveData) {
 
         const previous = data.previous || null
         const balance = data.amount
 
-        const { block, hash } = createBlock(secretKey, {
+        const { block, hash } = createBlock(this.privateKey, {
             previous,
             representative: this.representative,
             balance,
@@ -47,7 +51,7 @@ export default class NanoWallet {
             work: null
         })
 
-        const frontier = previous || derivePublicKey(secretKey);
+        const frontier = previous || derivePublicKey(this.privateKey);
 
         const { work } = await this.rpc.workGenerate(frontier, RECEIVE_DIFFICULTY);
 
@@ -77,8 +81,8 @@ export default class NanoWallet {
         return { hash };
     }
 
-    async sendAll(secretKey: string, data: SendData) {
-        const { block, hash } = createBlock(secretKey, {
+    async sendAll(data: SendData) {
+        const { block, hash } = createBlock(this.privateKey, {
             previous: data.previous,
             representative: this.representative,
             balance: '0',
