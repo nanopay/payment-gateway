@@ -10,7 +10,7 @@ interface RPCProps {
 interface ReceiveData {
     link: string;
     amount: string;
-    previous?: string;
+    previous?: string | null;
 }
 
 interface SendData {
