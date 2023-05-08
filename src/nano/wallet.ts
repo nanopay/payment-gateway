@@ -43,9 +43,11 @@ export default class NanoWallet {
     }
 
     async init () {
-        const state = await this.kvStore.get(this.account);
+        const state = await this.kvStore.get<NanoWalletState>(this.account, {
+            type: 'json'
+        });
         if (state) {
-            this.state = JSON.parse(state);
+            this.state = state;
         }
     }
 
