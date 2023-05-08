@@ -3,9 +3,9 @@ import { pusherSend } from './pusher/pusher';
 import { BadRequestException, SuccessResponse, UnauthorizedException } from './responses';
 import { Environment, MessageBody, Payment, RequestBody, WebhookDelivery } from './types';
 import { getHeaders, parseTime, rawToNano } from './utils';
-import RPC from './nano/rpc';
 import { deriveSecretKey } from 'nanocurrency';
 import NanoWebsocket from './nano/ws';
+import NanoWallet from './nano/wallet';
 
 const PAYMENTS_TABLE = 'payments';
 const INVOICES_TABLE = 'invoices';
@@ -95,10 +95,14 @@ export default {
 
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-		const rpc = new RPC({
+		const privateKey = deriveSecretKey(env.SEED, invoice.index);
+
+		const wallet = new NanoWallet({
+			privateKey,
 			rpcURLs: env.RPC_URLS.split(','),
 			workerURLs: env.WORKER_URLS.split(','),
 			representative: env.REPRESENTATIVE,
+			kvStore: env.WALLET
 		});
 
 		try {
@@ -159,6 +163,11 @@ export default {
 
 						if (paid_total >= invoice.price) {
 							nanoWS.close();
+
+							await env.PAYMENT_RECEIVER_QUEUE.send({
+								invoice,
+								payments: _payments
+							});
 						}
 
 						// Send the payment to the worker write to the db
@@ -175,11 +184,7 @@ export default {
 							payments: _payments
 						});
 
-						//
-						await env.PAYMENT_RECEIVER_QUEUE.send({
-							invoice,
-							payment: newPayment
-						});
+						
 					})
 
 					const sleepTimeout = () => new Promise(resolve => {
@@ -230,28 +235,24 @@ export default {
 					break;
 				case 'payment-receiver-queue':
 					// Receive nano transaction
-					if (!payment) {
-						throw new Error('Missing payment');
+					if (!payments) {
+						throw new Error('Missing payments');
 					}
 					if (!invoice) {
 						throw new Error('Missing invoice');
 					}
 
-					const secretKey = deriveSecretKey(env.SEED, invoice.index);
+					await wallet.init();
 
-					const { hash: paymentReceiveHash } = await rpc.receive(secretKey, {
-						link: payment.hash,
-						amount: payment.amountRaws,
-					});
+					for (const payment of payments) {
 
-					console.info("New Payment Received:", paymentReceiveHash);
+						const { hash: paymentReceiveHash } = await wallet.receive(payment.hash, payment.amountRaws);
+
+						console.info("New Payment Received:", paymentReceiveHash);
+					}
 
 					await env.PAYMENT_SENDER_QUEUE.send({
 						invoice,
-						payment: {
-							...payment,
-							receive_tx: paymentReceiveHash
-						}
 					})
 
 					break;
@@ -261,19 +262,10 @@ export default {
 					if (!invoice) {
 						throw new Error('Missing invoice');
 					}
-					if (!payment) {
-						throw new Error('Missing payment');
-					}
-					if (!payment.receive_tx) {
-						throw new Error('Missing receive_tx');
-					}
 
-					const _secretKey = deriveSecretKey(env.SEED, invoice.index);
+					await wallet.init();
 
-					const { hash: paymentSendHash } = await rpc.sendAll(_secretKey, {
-						link: invoice.recipient_address,
-						previous: payment.receive_tx
-					});
+					const { hash: paymentSendHash } = await wallet.sendAll(invoice.recipient_address);
 
 					console.info("New Payment Sent:", paymentSendHash);
 
