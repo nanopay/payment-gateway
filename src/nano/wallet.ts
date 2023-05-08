@@ -14,22 +14,11 @@ export interface NanoWalletState {
     frontier: string | null;
 }
 
-export interface ReceiveData {
-    link: string;
-    amount: string;
-    previous?: string | null;
-}
-
-export interface SendData {
-    link: string;
-    previous: string;
-}
-
 export default class NanoWallet {
     rpc: NanoRPC;
     private privateKey: string;
     private kvStore: KVNamespace;
-    private publicKey: string;
+    publicKey: string;
     account: string;
     representative: string;
     state: NanoWalletState = {
@@ -88,20 +77,19 @@ export default class NanoWallet {
         return work;
     }
 
-    async receive(data: ReceiveData) {
+    async receive(link: string, amount: string) {
 
-        const previous = data.previous || null
-        const balance = TunedBigNumber(this.state.balance).plus(data.amount).toString();
+        const balance = TunedBigNumber(this.state.balance).plus(amount).toString();
 
         const { block, hash } = createBlock(this.privateKey, {
-            previous,
+            previous: this.state.frontier,
             representative: this.representative,
             balance,
-            link: data.link,
+            link,
             work: null
         })
 
-        const frontier = previous || this.publicKey;
+        const frontier = this.state.frontier || this.publicKey;
 
         const work = await this.workGenerate(frontier, RECEIVE_DIFFICULTY);
 
@@ -122,16 +110,21 @@ export default class NanoWallet {
         return { hash };
     }
 
-    async sendAll(data: SendData) {
+    async sendAll(to: string) {
+
+        if (this.state.frontier === null) {
+            throw new Error('No frontier');
+        }
+ 
         const { block, hash } = createBlock(this.privateKey, {
-            previous: data.previous,
+            previous: this.state.frontier,
             representative: this.representative,
             balance: '0',
-            link: data.link,
+            link: to,
             work: null
         })
 
-        const work = await this.workGenerate(data.previous, SEND_DIFFICULTY);
+        const work = await this.workGenerate(this.state.frontier, SEND_DIFFICULTY);
 
         const processed = await this.rpc.process({
             ...block,
