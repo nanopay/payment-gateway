@@ -78,3 +78,8 @@ compatibility_date = "2023-02-14"
   max_batch_timeout = 5 # seconds
   max_retries = 0
   dead_letter_queue = "sender-queue-dead"
+
+[[kv_namespaces]]
+  binding = "WALLET"
+  preview_id = ""
+  id = ""

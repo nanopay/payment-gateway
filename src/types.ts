@@ -7,7 +7,11 @@ export interface Queues {
 	PAYMENT_RECEIVER_QUEUE: Queue;
 	PAYMENT_SENDER_QUEUE: Queue;
 }
-export interface Environment extends Queues {
+
+export interface KVNamespaces {
+	WALLET: KVNamespace;
+}
+export interface Environment extends Queues, KVNamespaces {
 	AUTH_TOKEN: string;
 	SUPABASE_URL: string;
 	SUPABASE_KEY: string;
@@ -28,8 +32,6 @@ export interface Payment {
 	amountRaws: string;
     hash: string;
 	timestamp: number;
-	receive_tx?: string;  
-	send_tx?: string;
 }
 
 export interface Service {
