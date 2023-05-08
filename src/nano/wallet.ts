@@ -54,7 +54,7 @@ export default class NanoWallet {
             ...this.state,
             ...state
         };
-        this.kvStore.put(this.account, JSON.stringify(this.state));
+        await this.kvStore.put(this.account, JSON.stringify(this.state));
     }
 
     async workGenerate (hash: string, threshold: string) {
