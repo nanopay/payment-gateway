@@ -1,4 +1,5 @@
 import { Unit, convert } from 'nanocurrency';
+import BigNumber from 'bignumber.js';
 
 const MAX_DECIMALS = 6;
 
@@ -31,3 +32,8 @@ export const getHeaders = (headers: Headers) => {
     });
     return result;
 }
+
+export const TunedBigNumber = BigNumber.clone({
+    EXPONENTIAL_AT: 1e9,
+    DECIMAL_PLACES: 36,
+})
