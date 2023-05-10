@@ -9,8 +9,8 @@ interface SendEvent {
 export default class NanoWebsocket {
 
     wsURL: string;
-    ws: WebSocket | null = null;
-    listeners: ((data: SendEvent) => void)[] = []
+    private ws: WebSocket | null = null;
+    private listeners: ((data: SendEvent) => void)[] = []
     closedByClient = false;
 
     constructor(wsUrl: string) {
@@ -44,6 +44,15 @@ export default class NanoWebsocket {
         // Call accept() to indicate that you'll be handling the socket here
         // in JavaScript, as opposed to returning it on to a client.
         this.ws.accept();
+
+        // keep alive
+        const keepAliveInterval = setInterval(() => {
+            if (this.ws?.readyState === WebSocket.READY_STATE_OPEN) {
+                this.ws?.send(JSON.stringify({ "ping": "pong" }));
+            } else {
+                clearInterval(keepAliveInterval);
+            }
+        }, 15000);
 
         this.ws.addEventListener('message', (msg) => {
             const data = JSON.parse(msg.data as string);
