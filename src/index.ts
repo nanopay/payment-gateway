@@ -112,7 +112,7 @@ export default {
 					const timeout = parseTime(invoice.expires_at) - Date.now();
 					let timeoutId: any;
 					let _payments: Payment[] = [];
-					
+
 					const nanoWS = new NanoWebsocket(env.NANO_WEBSOCKET_URL);
 
 					await nanoWS.connect();
@@ -130,7 +130,7 @@ export default {
 						if (timeoutId) {
 							clearTimeout(timeoutId)
 						}
-						
+
 						if (e.code !== 1000 || !nanoWS.closedByClient) {
 							throw new Error(`Websocket connection closed: ${env.NANO_WEBSOCKET_URL} ${e.reason ? ', ' + e.reason : ''}`)
 						}
@@ -161,14 +161,6 @@ export default {
 							return acc + payment.amount;
 						}, 0);
 
-						if (paid_total >= invoice.price) {
-							nanoWS.close();
-
-							await env.PAYMENT_RECEIVER_QUEUE.send({
-								invoice,
-								payments: _payments
-							});
-						}
 
 						// Send the payment to the worker write to the db
 						await env.PAYMENT_WRITE_QUEUE.send({
@@ -184,7 +176,19 @@ export default {
 							payments: _payments
 						});
 
-						
+						if (paid_total >= invoice.price) {
+
+							nanoWS.unsubscribe(invoice.pay_address);
+
+							await env.PAYMENT_RECEIVER_QUEUE.send({
+								invoice,
+								payments: _payments
+							});
+							
+							nanoWS.close();
+							
+						}
+
 					})
 
 					const sleepTimeout = () => new Promise(resolve => {
@@ -195,7 +199,17 @@ export default {
 						}, timeout);
 					})
 
-					await sleepTimeout();
+					const isClosed = () => new Promise(resolve => {
+						if (nanoWS.closedByClient) {
+							resolve(true);
+						} else {
+							setTimeout(() => {
+								resolve(isClosed());
+							}, 100);
+						}
+					})
+
+					await Promise.race([sleepTimeout(), isClosed()]);
 
 					break;
 
