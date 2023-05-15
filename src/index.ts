@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { pusherSend } from './pusher/pusher';
 import { BadRequestException, SuccessResponse, UnauthorizedException } from './responses';
 import { Environment, MessageBody, Payment, RequestBody, WebhookDelivery } from './types';
-import { getHeaders, parseTime, rawToNano } from './utils';
+import { fetchWithTimeout, getHeaders, parseTime, rawToNano } from './utils';
 import { deriveSecretKey } from 'nanocurrency';
 import NanoWebsocket from './nano/ws';
 import NanoWallet from './nano/wallet';
@@ -11,7 +11,8 @@ const PAYMENTS_TABLE = 'payments';
 const INVOICES_TABLE = 'invoices';
 const HOOK_RETRY = false;
 const HOOK_DELIVERIES_TABLE = 'hook_deliveries'
-const MIN_AMOUNT = 0.00001
+const MIN_AMOUNT = 0.00001;
+const WEBHOOK_DELIVERY_TIMEOUT = 15000; // 15 seconds
 
 export default {
 	async fetch(request: Request, env: Environment): Promise<Response> {
@@ -184,9 +185,9 @@ export default {
 								invoice,
 								payments: _payments
 							});
-							
+
 							nanoWS.close();
-							
+
 						}
 
 					})
@@ -333,24 +334,25 @@ export default {
 
 					try {
 
-						const request_headers = {
+						const started_at = new Date().toISOString();
+
+						const requestHeaders = {
 							'Content-Type': 'application/json',
 							...message.hook.headers
-						};
+						}
 
-						const request_body = {
+						const requestBody = {
 							type: message.hook_type,
 							invoice,
 							service,
 							payment,
 						}
 
-						const started_at = new Date().toISOString();
-
-						const response = await fetch(message.hook.url, {
+						const response = await fetchWithTimeout(message.hook.url, {
 							method: 'POST',
-							headers: request_headers,
-							body: JSON.stringify(request_body)
+							headers: requestHeaders,
+							body: requestBody,
+							timeout: WEBHOOK_DELIVERY_TIMEOUT
 						})
 
 						const response_body = await response.text();
@@ -368,8 +370,8 @@ export default {
 								success: response.ok,
 								url: message.hook.url,
 								status_code: response.status,
-								request_headers: request_headers,
-								request_body,
+								request_headers: requestHeaders,
+								request_body: requestBody,
 								response_headers,
 								response_body,
 								started_at,
