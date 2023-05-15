@@ -73,7 +73,7 @@ export default class NanoWebsocket {
         return this.ws;
     }
 
-    async subscribe(account: string) {
+    subscribe(account: string) {
 
         this.check();
 
@@ -85,7 +85,21 @@ export default class NanoWebsocket {
             }
         }
 
-        // Now you can send and receive messages like before.
+        this.ws?.send(JSON.stringify(confirmation_subscription));
+    }
+
+    unsubscribe(account: string) {
+
+        this.check();
+
+        const confirmation_subscription = {
+            "action": "unsubscribe",
+            "topic": "confirmation",
+            "options": {
+                "accounts": [account]
+            }
+        }
+
         this.ws?.send(JSON.stringify(confirmation_subscription));
     }
 
