@@ -37,3 +37,28 @@ export const TunedBigNumber = BigNumber.clone({
     EXPONENTIAL_AT: 1e9,
     DECIMAL_PLACES: 36,
 })
+
+interface FetchWithTimeoutOptions extends Omit<RequestInit<RequestInitCfProperties>, 'signal'> {
+    timeout: number;
+    body?: any;
+}
+
+export const fetchWithTimeout = async (url: string, { timeout, ...options }: FetchWithTimeoutOptions): Promise<Response> => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    const headers: Record<string, string> = {
+        ...options.headers,
+    }
+    if (typeof options.body === 'object') {
+        headers['Content-Type'] = 'application/json';
+    }
+    const body = typeof options.body === 'object' ? JSON.stringify(options.body) : options.body;
+    const response = await fetch(url, {
+        ...options,
+        body,
+        headers,
+        signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;;
+}

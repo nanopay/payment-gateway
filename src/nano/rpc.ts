@@ -1,4 +1,5 @@
-import { BlockRepresentation, checkAddress, createBlock, derivePublicKey, validateWork } from "nanocurrency";
+import { BlockRepresentation } from "nanocurrency";
+import { fetchWithTimeout } from "../utils";
 
 export interface NanoRPCProps {
     rpcURLs: string | string[];
@@ -15,23 +16,6 @@ interface WorkGenerateResponse {
 
 interface ProcessResponse {
     hash: string;
-}
-
-const postJsonWithTimeout = async <T>(url: string, body: any, timeout = 30000): Promise<T> => {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            "content-type": "application/json;charset=UTF-8",
-            "content-length": JSON.stringify(body).length.toString(),
-        },
-        body: JSON.stringify(body),
-        signal: controller.signal
-    });
-    clearTimeout(id);
-    return response.json();
 }
 
 export default class NanoRPC {
@@ -72,11 +56,16 @@ export default class NanoRPC {
     async postRPC<TRPCResponse = unknown>(data: any, urls = this.rpcURLs, retry = 0): Promise<TRPCResponse> {
         const url = urls[retry];
         try {
-            const response = await postJsonWithTimeout<TRPCResponse>(url, data, this.timeout);
-            if (response instanceof Object && "error" in response) {
-                throw new Error(`RPC error: ${response.error}`);
+            const response = await fetchWithTimeout(url, {
+                method: "POST",
+                body: data,
+                timeout: this.timeout
+            });
+            const body = response.json();
+            if (body instanceof Object && "error" in body) {
+                throw new Error(`RPC error: ${body.error}`);
             }
-            return response;
+            return body as TRPCResponse;
         } catch (e) {
             if (retry < urls.length - 1) {
                 return await this.postRPC(data, urls, retry + 1);
