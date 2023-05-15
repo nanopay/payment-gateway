@@ -6,13 +6,7 @@ import { fetchWithTimeout, getHeaders, parseTime, rawToNano } from './utils';
 import { deriveSecretKey } from 'nanocurrency';
 import NanoWebsocket from './nano/ws';
 import NanoWallet from './nano/wallet';
-
-const PAYMENTS_TABLE = 'payments';
-const INVOICES_TABLE = 'invoices';
-const HOOK_RETRY = false;
-const HOOK_DELIVERIES_TABLE = 'hook_deliveries'
-const MIN_AMOUNT = 0.00001;
-const WEBHOOK_DELIVERY_TIMEOUT = 15000; // 15 seconds
+import { HOOK_DELIVERIES_TABLE, HOOK_RETRY, INVOICES_TABLE, MIN_AMOUNT, PAYMENTS_TABLE, WEBHOOK_DELIVERY_TIMEOUT } from './nano/constants';
 
 export default {
 	async fetch(request: Request, env: Environment): Promise<Response> {
