@@ -1,5 +1,6 @@
 import { Unit, convert } from 'nanocurrency';
 import BigNumber from 'bignumber.js';
+import { encodeBase32 } from './base32';
 
 const MAX_DECIMALS = 6;
 
@@ -60,5 +61,11 @@ export const fetchWithTimeout = async (url: string, { timeout, ...options }: Fet
         signal: controller.signal
     });
     clearTimeout(id);
-    return response;;
+    return response;
+}
+
+export const generateInvoiceId = (): string => {
+	const random = crypto.getRandomValues(new Uint8Array(5))
+	const encoded = encodeBase32(random)
+	return encoded.slice(0, 4) + '-' + encoded.slice(4, 8)
 }
