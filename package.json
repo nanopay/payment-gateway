@@ -17,6 +17,7 @@
     "@supabase/supabase-js": "^2.8.0",
     "bignumber.js": "^9.1.1",
     "crypto-js": "^4.1.1",
-    "nanocurrency": "^2.5.0"
+    "nanocurrency": "^2.5.0",
+    "zod": "^3.22.4"
   }
 }
