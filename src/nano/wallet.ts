@@ -1,6 +1,5 @@
 import { createBlock, deriveAddress, derivePublicKey, validateWork } from "nanocurrency";
 import NanoRPC, { NanoRPCProps } from "./rpc";
-import { RECEIVE_DIFFICULTY, SEND_DIFFICULTY } from "./constants";
 import { TunedBigNumber } from "../utils";
 
 export interface NanoWalletProps extends NanoRPCProps {
@@ -13,6 +12,9 @@ export interface NanoWalletState {
     balance: string;
     frontier: string | null;
 }
+
+export const SEND_DIFFICULTY = 'fffffff800000000';
+export const RECEIVE_DIFFICULTY = 'fffffe0000000000';
 
 export default class NanoWallet {
     rpc: NanoRPC;
