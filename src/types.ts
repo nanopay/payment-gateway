@@ -19,7 +19,7 @@ export interface Environment extends Queues, KVNamespaces {
 	PUSHER_APP_ID: string;
 	PUSHER_KEY: string;
 	PUSHER_SECRET: string;
-	SEED: string;
+	HOT_WALLET_SEED: string;
 	REPRESENTATIVE: string;
 	RPC_URLS: string;
 	WORKER_URLS: string;
