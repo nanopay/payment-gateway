@@ -22,6 +22,18 @@ export async function BadRequestException(reason: string) {
     });
 }
 
+export async function ServerException(reason: string) {
+    return new Response(JSON.stringify({
+        reason
+    }), {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+}
+
 export async function SuccessResponse(data: Record<string, any>) {
     return new Response(JSON.stringify(data), {
         status: 200,
