@@ -44,23 +44,25 @@ export interface Service {
 	contact_email: string | null;
 }
 
-export interface Invoice {
+export interface InvoiceCreate {
+	title: string
+	description?: string | null
+	price: number
+	recipient_address: string
+	metadata?: Record<string, any> | null
+	redirect_url?: string | null
+	user_id?: string | null
+	service_id?: string | null
+}
+
+export interface Invoice extends InvoiceCreate {
 	id: string;
 	created_at: string;
 	expires_at: string;
-	price: number;
 	currency: string;
-	recipient_address: string;
 	pay_address: string;
 	status: string;
-	title: string;
-	description: string;
-	metadata: string;
 	index: number;
-}
-
-export interface RequestBody {
-	invoiceId: string;
 }
 
 export interface Hook {
@@ -71,8 +73,8 @@ export interface Hook {
 	headers: Record<string, string>;
 	event_types: string[];
 	description: string | null;
-	active: boolean
-	created_at: string
+	active: boolean;
+	created_at: string;
 }
 
 export interface WebhookDelivery {
