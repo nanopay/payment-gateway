@@ -1,12 +1,27 @@
+import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
+import { deriveAddress, derivePublicKey, deriveSecretKey } from 'nanocurrency';
 import { pusherSend } from './pusher/pusher';
-import { BadRequestException, SuccessResponse, UnauthorizedException } from './responses';
-import { Environment, MessageBody, Payment, RequestBody, WebhookDelivery } from './types';
-import { fetchWithTimeout, getHeaders, parseTime, rawToNano } from './utils';
-import { deriveSecretKey } from 'nanocurrency';
+import { BadRequestException, ServerException, SuccessResponse, UnauthorizedException } from './responses';
+import { Environment, InvoiceCreate, MessageBody, Payment, WebhookDelivery } from './types';
+import { fetchWithTimeout, getHeaders, parseTime, rawToNano, generateInvoiceId } from './utils';
 import NanoWebsocket from './nano/ws';
 import NanoWallet from './nano/wallet';
-import { HOOK_DELIVERIES_TABLE, HOOK_RETRY, INVOICES_TABLE, MIN_AMOUNT, PAYMENTS_TABLE, WEBHOOK_DELIVERY_TIMEOUT } from './nano/constants';
+import { HOOK_DELIVERIES_TABLE, HOOK_RETRY, INVOICE_EXPIRATION, INVOICE_MIN_AMOUNT, WEBHOOK_DELIVERY_TIMEOUT } from './constants';
+
+const InvoiceSchema: z.ZodType<InvoiceCreate>= z.object({
+	title: z.string(),
+	description: z.string().max(512).optional(),
+	price: z.number().min(INVOICE_MIN_AMOUNT),
+	recipient_address: z.string().refine(value =>
+	  /^nano_[13456789abcdefghijkmnopqrstuwxyz]{60}$/.test(value)
+	),
+	metadata: z.record(z.unknown()).optional(),
+	redirect_url: z.string().url().max(512).nullable().optional(),
+	user_id: z.string().uuid().nullable().optional(),
+	service_id: z.string().nullable().optional(),
+  })
+  .refine(data => !!data.title && !!data.price && !!data.recipient_address && (data.service_id || data.user_id));
 
 export default {
 	async fetch(request: Request, env: Environment): Promise<Response> {
@@ -31,47 +46,86 @@ export default {
 			return UnauthorizedException('Invalid credentials');
 		}
 
-		const body: RequestBody = await request.json();
+		const body = await request.json();
 
-		if (body.invoiceId === undefined) {
-			return BadRequestException('Missing required fields');
-		}
+		const {
+			title,
+			description,
+			metadata,
+			price,
+			recipient_address,
+			service_id,
+			user_id,
+			redirect_url,
+		} = InvoiceSchema.parse(body)
+
+		const currency = 'XNO'
+		const expires_at = new Date(Date.now() + INVOICE_EXPIRATION).toISOString()
 
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-		const { data: invoice, error } = await supabase
-			.from(INVOICES_TABLE)
-			.select(`id,created_at,expires_at,index,price,currency,recipient_address,status,pay_address,status,title,description,metadata,service:services(name, display_name, avatar_url, description, id, website, contact_email, hooks(*))`)
-			.eq('id', body.invoiceId)
-			.single();
+		const id = generateInvoiceId()
+
+		const { data, error } = await supabase
+			.from('invoices')
+			.insert({
+				id,
+				title,
+				description,
+				metadata,
+				expires_at,
+				currency,
+				price,
+				recipient_address,
+				service_id,
+				user_id: service_id ? null : user_id,
+				redirect_url,
+			})
+			.select(`id,created_at,expires_at,index,price,currency,recipient_address,status,status,title,description,metadata,service:services(name, display_name, avatar_url, description, id, website, contact_email, hooks(*))`)
+			.single()
+
+		const { service, ...invoice} = data!
 
 		if (error) {
 			console.error("Supabase error", error)
 			return BadRequestException(error.message);
 		}
 
-		if (!invoice) {
-			return BadRequestException('Invoice not found');
-		}
+		// Derive new pay address from HOT_WALLET
+		const secretKey = deriveSecretKey(env.HOT_WALLET_SEED, invoice.index)
+		const publicKey = derivePublicKey(secretKey)
+		const pay_address = deriveAddress(publicKey, {
+			useNanoPrefix: true,
+		})
 
-		if (invoice.status !== 'pending') {
-			return BadRequestException('Invoice already paid');
+		const { error: updateError } = await supabase
+		.from('invoices')
+		.update({
+			pay_address,
+		})
+		.eq('id', id)
+
+		if (updateError) {
+			return ServerException(updateError.message);
 		}
 
 		await env.PAYMENT_LISTENER_QUEUE.send({
 			invoice: {
+				pay_address,
 				...invoice,
 				service: undefined
 			},
-			service: invoice.service ? {
-				...invoice.service,
+			service: service ? {
+				...service,
 				hooks: undefined
 			} : null,
-			hooks: (invoice.service as any)?.hooks || []
+			hooks: (service as any)?.hooks || []
 		});
 
 		return SuccessResponse({
-			message: 'Sent to queue'
+			id,
+			pay_address,
+			expires_at
 		});
 	},
 	async queue(batch: MessageBatch<MessageBody>, env: Environment, ctx: ExecutionContext): Promise<void> {
@@ -90,7 +144,7 @@ export default {
 
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-		const privateKey = deriveSecretKey(env.SEED, invoice.index);
+		const privateKey = deriveSecretKey(env.HOT_WALLET_SEED, invoice.index);
 
 		const wallet = new NanoWallet({
 			privateKey,
@@ -143,7 +197,7 @@ export default {
 							amount: rawToNano(payment.amount)
 						}
 
-						if (newPayment.amount < MIN_AMOUNT) {
+						if (newPayment.amount < INVOICE_MIN_AMOUNT) {
 							console.info("Payment amount too low:", newPayment.amount);
 							return
 						}
@@ -219,7 +273,7 @@ export default {
 						throw new Error('Missing hooks');
 					}
 
-					const { error } = await supabase.from(PAYMENTS_TABLE).insert([{
+					const { error } = await supabase.from('payments').insert([{
 						invoice_id: invoice.id,
 						...payment
 					}]);
