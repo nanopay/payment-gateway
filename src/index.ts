@@ -7,7 +7,7 @@ import { Environment, InvoiceCreate, MessageBody, Payment, WebhookDelivery } fro
 import { fetchWithTimeout, getHeaders, parseTime, rawToNano, generateInvoiceId } from './utils';
 import NanoWebsocket from './nano/ws';
 import NanoWallet from './nano/wallet';
-import { HOOK_DELIVERIES_TABLE, HOOK_RETRY, INVOICE_EXPIRATION, INVOICE_MIN_AMOUNT, WEBHOOK_DELIVERY_TIMEOUT } from './constants';
+import { HOOK_RETRY, INVOICE_EXPIRATION, INVOICE_MIN_AMOUNT, WEBHOOK_DELIVERY_TIMEOUT } from './constants';
 
 const InvoiceSchema: z.ZodType<InvoiceCreate>= z.object({
 	title: z.string(),
@@ -440,7 +440,7 @@ export default {
 					if (!message.hook_delivery) {
 						throw new Error('Missing hook_delivery');
 					}
-					const { error: writeHookError, data } = await supabase.from(HOOK_DELIVERIES_TABLE).insert([message.hook_delivery]).select('id').single();
+					const { error: writeHookError, data } = await supabase.from('hook_deliveries').insert([message.hook_delivery]).select('id').single();
 					if (writeHookError) {
 						throw new Error(writeHookError.message);
 					}
