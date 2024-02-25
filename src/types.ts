@@ -77,7 +77,7 @@ export interface Hook {
 	created_at: string;
 }
 
-export interface WebhookDelivery {
+export interface HookDelivery {
 	hook_id: string;
 	type: string;
 	url: string;
@@ -103,6 +103,6 @@ export interface MessageBody {
 	hooks: Hook[];
 	hook: Hook;
 	hook_type: string;
-	hook_delivery?: WebhookDelivery;
+	hook_delivery?: HookDelivery;
 	payments?: Payment[];
 }
