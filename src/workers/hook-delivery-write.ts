@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { Environment, MessageBody } from "../types";
+import { Database, Environment, MessageBody } from "../types";
 
 export const hookDeliveryWrite = async (
 	message: MessageBody,
@@ -12,7 +12,7 @@ export const hookDeliveryWrite = async (
 		throw new Error("Missing hook_delivery");
 	}
 
-	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY);
 
 	const { error: writeHookError, data } = await supabase
 		.from("hook_deliveries")

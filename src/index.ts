@@ -7,7 +7,7 @@ import {
 	SuccessResponse,
 	UnauthorizedException
 } from "./responses";
-import { Environment, InvoiceCreate } from "./types";
+import { Database, Environment, InvoiceCreate } from "./types";
 import { generateInvoiceId } from "./utils";
 import { INVOICE_EXPIRATION, INVOICE_MIN_AMOUNT } from "./constants";
 
@@ -74,7 +74,7 @@ export default {
 		const currency = "XNO";
 		const expires_at = new Date(Date.now() + INVOICE_EXPIRATION).toISOString();
 
-		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+		const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY);
 
 		const id = generateInvoiceId();
 

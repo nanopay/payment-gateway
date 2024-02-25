@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { Environment, MessageBody } from "../types";
+import { Database, Environment, MessageBody } from "../types";
 
 export const paymentWrite = async (
 	message: MessageBody,
@@ -17,7 +17,7 @@ export const paymentWrite = async (
 		throw new Error("Missing hooks");
 	}
 
-	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY);
 
 	const { error } = await supabase.from("payments").insert([
 		{
