@@ -13,7 +13,7 @@ import { INVOICE_EXPIRATION, INVOICE_MIN_AMOUNT } from "./constants";
 
 import { queue } from "./queues";
 
-const InvoiceSchema: z.ZodType<InvoiceCreate> = z
+const InvoiceSchema: z.ZodType<Omit<InvoiceCreate, 'id' | 'expires_at'>> = z
 	.object({
 		title: z.string(),
 		description: z.string().max(512).optional(),
