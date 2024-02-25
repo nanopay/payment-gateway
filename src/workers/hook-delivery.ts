@@ -1,5 +1,6 @@
+import { v4 as uuid } from 'uuid';
 import { HOOK_RETRY, WEBHOOK_DELIVERY_TIMEOUT } from "../constants";
-import { Environment, HookDelivery, MessageBody } from "../types";
+import { Environment, MessageBody } from "../types";
 import { fetchWithTimeout, getHeaders } from "../utils";
 
 export const hookDelivery = async (message: MessageBody, env: Environment) => {
@@ -22,16 +23,17 @@ export const hookDelivery = async (message: MessageBody, env: Environment) => {
 	try {
 		const started_at = new Date().toISOString();
 
-		const requestHeaders = {
-			"Content-Type": "application/json",
-			...hook.headers
-		};
+		const deliveryId = uuid();
 
 		const requestBody = {
 			type: hook_type,
 			invoice,
 			service,
 			payment
+		};
+
+		const requestHeaders = {
+			"Content-Type": "application/json"
 		};
 
 		const response = await fetchWithTimeout(hook.url, {
@@ -51,6 +53,7 @@ export const hookDelivery = async (message: MessageBody, env: Environment) => {
 		await env.HOOK_DELIVERY_WRITE_QUEUE.send({
 			invoice,
 			hook_delivery: {
+				id: deliveryId,
 				hook_id: hook.id,
 				type: hook_type,
 				success: response.ok,
@@ -63,7 +66,7 @@ export const hookDelivery = async (message: MessageBody, env: Environment) => {
 				started_at,
 				completed_at,
 				redelivery: false
-			} as HookDelivery
+			}
 		});
 	} catch (e: any) {
 		console.error("Webhook Error", e);
