@@ -8,10 +8,14 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 
 	const { invoice, service, hooks } = message;
 
+	if (!invoice.pay_address) {
+		throw new Error("Missing invoice");
+	}
+
 	// Detect new payments
 	const timeout = parseTime(invoice.expires_at) - Date.now();
 	let timeoutId: any;
-	let _payments: Payment[] = [];
+	let payments: Payment[] = [];
 
 	const nanoWS = new NanoWebsocket(env.NANO_WEBSOCKET_URL);
 
@@ -41,6 +45,11 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 	});
 
 	nanoWS.onPayment(async (payment) => {
+
+		if (!invoice.pay_address) {
+			throw new Error("Missing invoice");
+		}
+
 		if (payment.from === invoice.pay_address) {
 			return;
 		}
@@ -58,9 +67,9 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 
 		console.info("New Payment:", payment.hash);
 
-		_payments.push(newPayment);
+		payments.push(newPayment);
 
-		const paid_total = _payments.reduce((acc, payment) => {
+		const paid_total = payments.reduce((acc, payment) => {
 			return acc + payment.amount;
 		}, 0);
 
@@ -75,7 +84,7 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 		// Send the payment to the worker to push to the channel
 		await env.PAYMENT_PUSHER_QUEUE.send({
 			invoice,
-			payments: _payments
+			payments: payments
 		});
 
 		if (paid_total >= invoice.price) {
@@ -83,7 +92,7 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 
 			await env.PAYMENT_RECEIVER_QUEUE.send({
 				invoice,
-				payments: _payments
+				payments: payments
 			});
 
 			nanoWS.close();
