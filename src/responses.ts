@@ -1,6 +1,6 @@
-export async function UnauthorizedException(reason: string) {
+export async function UnauthorizedException() {
     return new Response(JSON.stringify({
-        reason
+        reason: 'Unauthorized'
     }), {
         status: 401,
         statusText: 'Unauthorized',
