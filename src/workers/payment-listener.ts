@@ -1,10 +1,9 @@
 import { INVOICE_MIN_AMOUNT } from "../constants";
-import NanoWebsocket from "../nano/ws";
+import NanoWebsocket from "../nano/websocket";
 import { Environment, MessageBody, Payment } from "../types";
 import { parseTime, rawToNano } from "../utils";
 
 export const paymentListener = async (message: MessageBody, env: Environment) => {
-
 
 	const { invoice, service, hooks } = message;
 
@@ -45,6 +44,8 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 	});
 
 	nanoWS.onPayment(async (payment) => {
+
+		console.log("Payment received", payment);
 
 		if (!invoice.pay_address) {
 			throw new Error("Missing invoice");
