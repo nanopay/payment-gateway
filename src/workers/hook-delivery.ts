@@ -1,7 +1,8 @@
-import { v4 as uuid } from 'uuid';
+import { v4 as uuid } from "uuid";
 import { HOOK_RETRY, WEBHOOK_DELIVERY_TIMEOUT } from "../constants";
 import { Environment, MessageBody } from "../types";
 import { fetchWithTimeout, getHeaders } from "../utils";
+import { sign } from "../utils/sign";
 
 export const hookDelivery = async (message: MessageBody, env: Environment) => {
 	// Send new payments to the webhook making a POST with json data
@@ -32,9 +33,14 @@ export const hookDelivery = async (message: MessageBody, env: Environment) => {
 			payment
 		};
 
-		const requestHeaders = {
+		const requestHeaders: HeadersInit = {
 			"Content-Type": "application/json"
 		};
+
+		if (hook.secret) {
+			const signature = await sign(JSON.stringify(requestBody), hook.secret);			
+			requestHeaders["X-Signature"] = signature;
+		}
 
 		const response = await fetchWithTimeout(hook.url, {
 			method: "POST",
