@@ -18,15 +18,14 @@ const InvoiceSchema: z.ZodType<Omit<InvoiceCreate, 'id' | 'expires_at'>> = z
 			),
 		metadata: z.record(z.unknown()).optional(),
 		redirect_url: z.string().url().max(512).nullable().optional(),
-		user_id: z.string().uuid().nullable().optional(),
-		service_id: z.string().nullable().optional()
+		service_id: z.string()
 	})
 	.refine(
 		(data) =>
 			!!data.title &&
 			!!data.price &&
 			!!data.recipient_address &&
-			(data.service_id || data.user_id)
+			!! data.service_id
 	);
 
 
@@ -40,7 +39,6 @@ export const createInvoice = async (request: Request, env: Environment) => {
 		price,
 		recipient_address,
 		service_id,
-		user_id,
 		redirect_url
 	} = InvoiceSchema.parse(body);
 
@@ -63,7 +61,6 @@ export const createInvoice = async (request: Request, env: Environment) => {
 			price,
 			recipient_address,
 			service_id,
-			user_id: service_id ? null : user_id,
 			redirect_url
 		})
 		.select(
