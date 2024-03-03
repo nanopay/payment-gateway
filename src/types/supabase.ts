@@ -1,4 +1,7 @@
 
+> nanopay-supabase@1.0.0 types
+> supabase gen types typescript --schema public --local
+
 export type Json =
   | string
   | number
@@ -166,10 +169,9 @@ export interface Database {
           recipient_address: string
           redirect_url: string | null
           refunded_amount: number | null
-          service_id: string | null
+          service_id: string
           status: string | null
           title: string
-          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -185,10 +187,9 @@ export interface Database {
           recipient_address: string
           redirect_url?: string | null
           refunded_amount?: number | null
-          service_id?: string | null
+          service_id: string
           status?: string | null
           title: string
-          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -204,10 +205,9 @@ export interface Database {
           recipient_address?: string
           redirect_url?: string | null
           refunded_amount?: number | null
-          service_id?: string | null
+          service_id?: string
           status?: string | null
           title?: string
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -216,20 +216,13 @@ export interface Database {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
           }
         ]
       }
       payments: {
         Row: {
           amount: number
-          amountRaws: string
+          amount_raws: string
           created_at: string
           from: string
           hash: string
@@ -240,7 +233,7 @@ export interface Database {
         }
         Insert: {
           amount: number
-          amountRaws: string
+          amount_raws: string
           created_at?: string
           from: string
           hash: string
@@ -251,7 +244,7 @@ export interface Database {
         }
         Update: {
           amount?: number
-          amountRaws?: string
+          amount_raws?: string
           created_at?: string
           from?: string
           hash?: string
