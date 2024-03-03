@@ -29,7 +29,7 @@ export const paymentReceiver = async (message: MessageBody, env: Environment) =>
     for (const payment of payments) {
         const { hash: paymentReceiveHash } = await wallet.receive(
             payment.hash,
-            payment.amountRaws
+            payment.amount_raws
         );
 
         console.info("New Payment Received:", paymentReceiveHash);

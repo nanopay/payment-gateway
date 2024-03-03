@@ -57,7 +57,7 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 
 		const newPayment = {
 			...payment,
-			amountRaws: payment.amount,
+			amount_raws: payment.amount,
 			amount: rawToNano(payment.amount)
 		};
 
