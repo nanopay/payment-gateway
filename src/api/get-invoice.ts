@@ -10,7 +10,7 @@ export const getInvoice = async (request: Request, env: Environment) => {
 
     const { data, error } = await supabase
         .from("invoices")
-        .select("*")
+        .select("*, service:services(name, display_name, avatar_url, description, website, contact_email)")
         .eq("id", id)
         .single();
 
