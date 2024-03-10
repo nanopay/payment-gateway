@@ -16,7 +16,7 @@ export interface KVNamespaces {
 export interface Environment extends Queues, KVNamespaces {
 	AUTH_TOKEN: string;
 	SUPABASE_URL: string;
-	SUPABASE_KEY: string;
+	SUPABASE_SECRET_KEY: string;
 	NANO_WEBSOCKET_URL: string;
 	PUSHER_APP_ID: string;
 	PUSHER_KEY: string;

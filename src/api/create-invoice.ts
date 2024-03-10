@@ -45,7 +45,7 @@ export const createInvoice = async (request: Request, env: Environment) => {
 	const currency = "XNO";
 	const expires_at = new Date(Date.now() + INVOICE_EXPIRATION).toISOString();
 
-	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
 
 	const id = generateInvoiceId();
 

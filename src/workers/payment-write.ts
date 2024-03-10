@@ -17,7 +17,7 @@ export const paymentWrite = async (
 		throw new Error("Missing hooks");
 	}
 
-	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
 
 	const { error } = await supabase.from("payments").insert([
 		{
