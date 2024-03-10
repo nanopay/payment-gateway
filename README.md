@@ -1,25 +1,32 @@
-# Nano Payment Worker
+# Nano Payment Gateway
 
-This project is responsible for detecting payment transactions for merchants using Cloudflare Workers with Queues
+Fast and scalable payment gateway for Nano cryptocurrency
 
-### Summary:
-1. Poducer receives an http request to listen to a given Nano address via HTTP and sends it to the workers.
-2. Worker connects with the websocket of a Nano node and waits for a confirmation of sending to the account until the payment expires.
-3. Worker saves the payment in the database (Supabase)
+## Summary:
+- Create and read invoices through REST API
+- Detect payment transactions through Nano node websocket
+- Receive payment amount and send to merchant account through Nano node RPC
+- Notify customers through websocket
+- Notify merchants through webhook
 
-- Retries: If the connection to the websocket or the writing to the database fails, up to 3 retries are performed before forwarding to the dead queue.
+## Technologies
 
-### Running
+- [Nano](https://nano.org): Instant, descentralized, zero fee cryptocurrency.
+- [Cloudflare Workers](https://workers.cloudflare.com/): Fast, cheap and scalable serverless functions on the EDGE
+- [Cloudflare Queues](https://developers.cloudflare.com/queues/): Send and receive messages with guaranteed delivery inside Cloudflare Workers.
+- [Supabase](https://supabase.com/): Open source Firebase alternative with a Postgres database accessible through REST API
+
+## Requirements
 
 - Requires a [Cloudflare Workers](https://workers.cloudflare.com/) account with queue support
-
 - Requires a Supabase account with a `transactions` table [TODO: Add table model]
-  
 - Requires npm installed, wrangler logged and curl for testing
+
+## Configure
 
 1. Install packages dependencies:
 ```bash
-npm i
+npm install
 ```
 
 2. Create the queue
@@ -39,7 +46,7 @@ wrangler secret put AUTH_TOKEN
 
 # Your supabase credentials
 wrangler secret put SUPABASE_URL
-wrangler secret put SUPABASE_KEY
+wrangler secret put SUPABASE_SECRET_KEY
 
 # A Nano node websocket url
 wrangler secret put NANO_WEBSOCKET_URL
@@ -49,6 +56,19 @@ wrangler secret put PUSHER_APP_ID
 wrangler secret put PUSHER_KEY
 wrangler secret put PUSHER_SECRET
 ```
+
+## Running locally
+```bash
+npm start
+```
+
+## Deploy
+
+```bash
+wrangler deploy
+```
+
+### Using
 
 5. Add an account to the queue:
 - Replace the Bearer with your token
