@@ -13,7 +13,7 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 
 	// Detect new payments
 	const timeout = parseTime(invoice.expires_at) - Date.now();
-	let timeoutId: any;
+	let timeoutId: NodeJS.Timeout;
 	let payments: Payment[] = [];
 
 	const nanoWS = new NanoWebsocket(env.NANO_WEBSOCKET_URL);
