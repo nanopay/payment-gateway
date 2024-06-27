@@ -34,7 +34,7 @@ npm install
 wrangler queues create payment-queue
 ```
 
-3. Publish to Cloudflare. It will generate an url for your worker:
+3. Publish to Cloudflare. It will generate an url for your gateway:
 ```bash
 wangler publish
 ```
@@ -76,7 +76,7 @@ wrangler deploy
 - expiresAt can be an ISO date or an unix timestamp (in ms)
 ```bash
 curl --request POST \
-  --url https://payment-worker.example.workers.dev/ \
+  --url https://payment-gateway.example.workers.dev/ \
   --header 'Authorization: Bearer my-secure-auth-token-here' \
   --header 'Content-Type: application/json' \
   --data '{
@@ -96,4 +96,4 @@ Success response [200]:
 6. Send a small amount of nano (at least 0.000001 XNO) to the address before expiring and check your supabase table "transactions".
 
 
-Important! Even if the initial request succeeds, the worker may fail if you don't configure your websocket node or subbase correctly. So check your Cloudflare Workers logs.
+Important! Even if the initial request succeeds, the gateway may fail if you don't configure your websocket node or subbase correctly. So check your Cloudflare Workers logs.
