@@ -29,9 +29,15 @@ Fast and scalable payment gateway for Nano cryptocurrency
 npm install
 ```
 
-2. Create the queue
+2. Create the queues:
 ```bash
-wrangler queues create payment-queue
+wrangler queues create payment-listener-queue
+wrangler queues create payment-write-queue
+wrangler queues create payment-pusher-queue
+wrangler queues create payment-receiver-queue
+wrangler queues create payment-sender-queue
+wrangler queues create webhook-delivery-queue
+wrangler queues create webhook-delivery-write-queue
 ```
 
 3. Publish to Cloudflare. It will generate an url for your gateway:
