@@ -1,24 +1,24 @@
 import { v4 as uuid } from "uuid";
-import { HOOK_RETRY, WEBHOOK_DELIVERY_TIMEOUT } from "../constants";
+import { WEBHOOK_RETRY, WEBHOOK_DELIVERY_TIMEOUT } from "../constants";
 import { Environment, MessageBody } from "../types";
 import { fetchWithTimeout, getHeaders } from "../utils";
 import { sign } from "../utils/sign";
 
-export const hookDelivery = async (message: MessageBody, env: Environment) => {
+export const webhookDelivery = async (message: MessageBody, env: Environment) => {
 	// Send new payments to the webhook making a POST with json data
 
-	const { invoice, payment, service, hook, hook_type } = message;
+	const { invoice, payment, service, webhook, webhook_type } = message;
 
 	if (!payment) {
 		throw new Error("Missing payment");
 	}
 
-	if (!hook) {
-		throw new Error("Missing hook");
+	if (!webhook) {
+		throw new Error("Missing webhook");
 	}
 
-	if (!hook_type) {
-		throw new Error("Missing hook_type");
+	if (!webhook_type) {
+		throw new Error("Missing webhook_type");
 	}
 
 	try {
@@ -27,7 +27,7 @@ export const hookDelivery = async (message: MessageBody, env: Environment) => {
 		const deliveryId = uuid();
 
 		const requestBody = {
-			type: hook_type,
+			type: webhook_type,
 			invoice,
 			service,
 			payment
@@ -37,12 +37,12 @@ export const hookDelivery = async (message: MessageBody, env: Environment) => {
 			"Content-Type": "application/json"
 		};
 
-		if (hook.secret) {
-			const signature = await sign(JSON.stringify(requestBody), hook.secret);			
+		if (webhook.secret) {
+			const signature = await sign(JSON.stringify(requestBody), webhook.secret);			
 			requestHeaders["X-Signature"] = signature;
 		}
 
-		const response = await fetchWithTimeout(hook.url, {
+		const response = await fetchWithTimeout(webhook.url, {
 			method: "POST",
 			headers: requestHeaders,
 			body: requestBody,
@@ -56,14 +56,14 @@ export const hookDelivery = async (message: MessageBody, env: Environment) => {
 		const response_headers = getHeaders(response.headers);
 
 		// Send the payment to the worker write to the db
-		await env.HOOK_DELIVERY_WRITE_QUEUE.send({
+		await env.WEBHOOK_DELIVERY_WRITE_QUEUE.send({
 			invoice,
-			hook_delivery: {
+			webhook_delivery: {
 				id: deliveryId,
-				hook_id: hook.id,
-				type: hook_type,
+				webhook_id: webhook.id,
+				type: webhook_type,
 				success: response.ok,
-				url: hook.url,
+				url: webhook.url,
 				status_code: response.status,
 				request_headers: requestHeaders,
 				request_body: requestBody,
@@ -76,7 +76,7 @@ export const hookDelivery = async (message: MessageBody, env: Environment) => {
 		});
 	} catch (e: any) {
 		console.error("Webhook Error", e);
-		if (HOOK_RETRY) {
+		if (WEBHOOK_RETRY) {
 			// Throw so queue automatically retries
 			throw new Error(e.message);
 		}

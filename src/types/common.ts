@@ -4,8 +4,11 @@ export interface Queues {
 	PAYMENT_LISTENER_QUEUE: Queue;
 	PAYMENT_WRITE_QUEUE: Queue;
 	PAYMENT_PUSHER_QUEUE: Queue;
-	HOOK_DELIVERY_QUEUE: Queue;
-	HOOK_DELIVERY_WRITE_QUEUE: Queue<{ invoice: Invoice, hook_delivery: HookDelivery }>;
+	WEBHOOK_DELIVERY_QUEUE: Queue;
+	WEBHOOK_DELIVERY_WRITE_QUEUE: Queue<{
+		invoice: Invoice;
+		webhook_delivery: WebhookDelivery;
+	}>;
 	PAYMENT_RECEIVER_QUEUE: Queue;
 	PAYMENT_SENDER_QUEUE: Queue;
 }
@@ -27,33 +30,42 @@ export interface Environment extends Queues, KVNamespaces {
 	WORKER_URLS: string;
 }
 
-export type Payment = Omit<Database['public']['Tables']['payments']['Insert'], 'invoice_id'>;
+export type Payment = Omit<
+	Database["public"]["Tables"]["payments"]["Insert"],
+	"invoice_id"
+>;
 
-export type Service = Database['public']['Tables']['services']['Row'];
+export type Service = Database["public"]["Tables"]["services"]["Row"];
 
-export type InvoiceCreate = Omit<Database['public']['Tables']['invoices']['Insert'], 'metadata'> & {
+export type InvoiceCreate = Omit<
+	Database["public"]["Tables"]["invoices"]["Insert"],
+	"metadata"
+> & {
 	metadata?: Record<string, any>;
 };
 
-export type Invoice = Database['public']['Tables']['invoices']['Row'];
+export type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 
-export type Hook = Database['public']['Tables']['hooks']['Row'];
+export type Webhook = Database["public"]["Tables"]["webhooks"]["Row"];
 
-export type HookDelivery = Omit<Database['public']['Tables']['hook_deliveries']['Insert'], 'request_body'> & {
+export type WebhookDelivery = Omit<
+	Database["public"]["Tables"]["webhooks_deliveries"]["Insert"],
+	"request_body"
+> & {
 	request_body: {
 		invoice: Invoice;
 		payment: Payment;
 		service: Service | null;
-	},
-}
+	};
+};
 
 export interface MessageBody {
 	invoice: Invoice;
 	payment?: Payment;
 	service: Service;
-	hooks: Hook[];
-	hook: Hook;
-	hook_type: string;
-	hook_delivery?: HookDelivery;
+	webhooks: Webhook[];
+	webhook: Webhook;
+	webhook_type: string;
+	webhook_delivery?: WebhookDelivery;
 	payments?: Payment[];
 }

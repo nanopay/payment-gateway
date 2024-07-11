@@ -5,7 +5,7 @@ import { parseTime, rawToNano } from "../utils";
 
 export const paymentListener = async (message: MessageBody, env: Environment) => {
 
-	const { invoice, service, hooks } = message;
+	const { invoice, service, webhooks } = message;
 
 	if (!invoice.pay_address) {
 		throw new Error("Missing invoice");
@@ -78,7 +78,7 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 		await env.PAYMENT_WRITE_QUEUE.send({
 			invoice,
 			service,
-			hooks,
+			webhooks,
 			payment: newPayment
 		});
 

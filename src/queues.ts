@@ -4,8 +4,8 @@ import { paymentWrite } from "./workers/payment-write";
 import { paymentReceiver } from "./workers/payment-receiver";
 import { paymentSender } from "./workers/payment-sender";
 import { paymentPusher } from "./workers/payment-pusher";
-import { hookDelivery } from "./workers/hook-delivery";
-import { hookDeliveryWrite } from "./workers/hook-delivery-write";
+import { webhookDelivery } from "./workers/webhook-delivery";
+import { webhookDeliveryWrite } from "./workers/webhook-delivery-write";
 
 export const queue = async (
 	batch: MessageBatch<MessageBody>,
@@ -42,12 +42,12 @@ export const queue = async (
 				await paymentPusher(message, env);
 				break;
 
-			case "hook-delivery-queue":
-				await hookDelivery(message, env);
+			case "webhook-delivery-queue":
+				await webhookDelivery(message, env);
 				break;
 
-			case "hook-delivery-write-queue":
-				await hookDeliveryWrite(message, env);
+			case "webhook-delivery-write-queue":
+				await webhookDeliveryWrite(message, env);
 				break;
 
 			default:

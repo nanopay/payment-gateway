@@ -36,26 +36,26 @@ compatibility_date = "2023-02-14"
  dead_letter_queue = "payment-pusher-queue-dead"
 
 [[queues.producers]]
-  queue = "hook-delivery-queue"
-  binding = "HOOK_DELIVERY_QUEUE"
+  queue = "webhook-delivery-queue"
+  binding = "WEBHOOK_DELIVERY_QUEUE"
 
 [[queues.consumers]]
- queue = "hook-delivery-queue"
+ queue = "webhook-delivery-queue"
  max_batch_size = 1
  max_batch_timeout = 5 # seconds
  max_retries = 3
- dead_letter_queue = "hook-delivery-queue-dead"
+ dead_letter_queue = "webhook-delivery-queue-dead"
 
 [[queues.producers]]
-  queue = "hook-delivery-write-queue"
-  binding = "HOOK_DELIVERY_WRITE_QUEUE"
+  queue = "webhook-delivery-write-queue"
+  binding = "WEBHOOK_DELIVERY_WRITE_QUEUE"
 
 [[queues.consumers]]
- queue = "hook-delivery-write-queue"
+ queue = "webhook-delivery-write-queue"
  max_batch_size = 1
  max_batch_timeout = 5 # seconds
  max_retries = 3
- dead_letter_queue = "hook-delivery-write-queue-dead"
+ dead_letter_queue = "webhook-delivery-write-queue-dead"
 
 [[queues.producers]]
   queue = "payment-receiver-queue"

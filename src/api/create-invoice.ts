@@ -76,7 +76,7 @@ export const createInvoice = async (request: Request, env: Environment) => {
 				title,
 				description,
 				metadata,
-				service:services(name, display_name, avatar_url, description, id, website, contact_email, hooks(*))
+				service:services(name, display_name, avatar_url, description, id, website, contact_email, webhooks(*))
 			`
 		)
 		.single();
@@ -115,10 +115,10 @@ export const createInvoice = async (request: Request, env: Environment) => {
 		service: service
 			? {
 					...service,
-					hooks: undefined
+					webhooks: undefined
 			  }
 			: null,
-		hooks: (service as any)?.hooks || []
+		webhooks: (service as any)?.webhooks || []
 	});
 
 	return SuccessResponse({

@@ -7,14 +7,14 @@ export const paymentWrite = async (
 ) => {
 	// Write new payments to the db
 
-	const { invoice, payment, service, hooks } = message;
+	const { invoice, payment, service, webhooks } = message;
 
 	if (!payment) {
 		throw new Error("Missing payment");
 	}
 
-	if (!hooks) {
-		throw new Error("Missing hooks");
+	if (!webhooks) {
+		throw new Error("Missing webhooks");
 	}
 
 	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
@@ -31,14 +31,14 @@ export const paymentWrite = async (
 	}
 	console.info("New Payment Stored:", payment.hash);
 
-	for (const hook of hooks) {
-		if (hook.active && hook.event_types.includes("invoice.paid")) {
-			await env.HOOK_DELIVERY_QUEUE.send({
+	for (const webhook of webhooks) {
+		if (webhook.active && webhook.event_types.includes("invoice.paid")) {
+			await env.WEBHOOK_DELIVERY_QUEUE.send({
 				invoice,
 				payment,
 				service,
-				hook,
-				hook_type: "invoice.paid"
+				webhook,
+				webhook_type: "invoice.paid"
 			});
 		}
 	}
