@@ -14,6 +14,17 @@ compatibility_date = "2023-02-14"
  dead_letter_queue = "payment-listener-queue-dead"
 
 [[queues.producers]]
+  queue = "payment-receiver-queue"
+  binding = "PAYMENT_RECEIVER_QUEUE"
+
+[[queues.consumers]]
+  queue = "payment-receiver-queue"
+  max_batch_size = 1
+  max_batch_timeout = 5 # seconds
+  max_retries = 0
+  dead_letter_queue = "receiver-queue-dead"
+
+[[queues.producers]]
   queue = "payment-write-queue"
   binding = "PAYMENT_WRITE_QUEUE"
 
@@ -36,6 +47,17 @@ compatibility_date = "2023-02-14"
  dead_letter_queue = "payment-pusher-queue-dead"
 
 [[queues.producers]]
+  queue = "payment-sender-queue"
+  binding = "PAYMENT_SENDER_QUEUE"
+
+[[queues.consumers]]
+  queue = "payment-sender-queue"
+  max_batch_size = 1
+  max_batch_timeout = 5 # seconds
+  max_retries = 0
+  dead_letter_queue = "sender-queue-dead"
+
+[[queues.producers]]
   queue = "webhook-delivery-queue"
   binding = "WEBHOOK_DELIVERY_QUEUE"
 
@@ -56,28 +78,6 @@ compatibility_date = "2023-02-14"
  max_batch_timeout = 5 # seconds
  max_retries = 3
  dead_letter_queue = "webhook-delivery-write-queue-dead"
-
-[[queues.producers]]
-  queue = "payment-receiver-queue"
-  binding = "PAYMENT_RECEIVER_QUEUE"
-
-[[queues.consumers]]
-  queue = "payment-receiver-queue"
-  max_batch_size = 1
-  max_batch_timeout = 5 # seconds
-  max_retries = 0
-  dead_letter_queue = "receiver-queue-dead"
-
-[[queues.producers]]
-  queue = "payment-sender-queue"
-  binding = "PAYMENT_SENDER_QUEUE"
-
-[[queues.consumers]]
-  queue = "payment-sender-queue"
-  max_batch_size = 1
-  max_batch_timeout = 5 # seconds
-  max_retries = 0
-  dead_letter_queue = "sender-queue-dead"
 
 [[kv_namespaces]]
   binding = "WALLET"
