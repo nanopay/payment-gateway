@@ -50,12 +50,24 @@ wangler publish
 # A secure authentication token
 wrangler secret put AUTH_TOKEN
 
-# Your supabase credentials
+# Your Supabase credentials
 wrangler secret put SUPABASE_URL
 wrangler secret put SUPABASE_SECRET_KEY
 
+# Your Nano seed for hot wallet (64 hex characters)
+wrangler secret put HOT_WALLET_SEED
+
 # A Nano node websocket url
 wrangler secret put NANO_WEBSOCKET_URL
+
+# A Nano representative account
+wrangler secret put REPRESENTATIVE
+
+# A Nano node RPC url
+wrangler secret put RPC_URL
+
+# A Nano node worker RPC url with PoW generation support (can be the same as RPC_URL)
+wrangler secret put WORKER_URLS
 
 # Your Pusher crendentials
 wrangler secret put PUSHER_APP_ID
