@@ -37,13 +37,6 @@ export type Payment = Omit<
 
 export type Service = Database["public"]["Tables"]["services"]["Row"];
 
-export type InvoiceCreate = Omit<
-	Database["public"]["Tables"]["invoices"]["Insert"],
-	"metadata"
-> & {
-	metadata?: Record<string, any>;
-};
-
 export type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 
 export type Webhook = Database["public"]["Tables"]["webhooks"]["Row"];

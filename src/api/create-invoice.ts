@@ -1,33 +1,28 @@
-import { BadRequestException, ServerException, SuccessResponse } from "../responses";
-import { Database, Environment, InvoiceCreate } from "../types";
+import {
+	BadRequestException,
+	ServerException,
+	SuccessResponse
+} from "../responses";
+import { Database, Environment } from "../types";
 import { generateInvoiceId } from "../utils";
 import { INVOICE_EXPIRATION, INVOICE_MIN_AMOUNT } from "../constants";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { deriveAddress, derivePublicKey, deriveSecretKey } from "nanocurrency";
 
-const InvoiceSchema: z.ZodType<Omit<InvoiceCreate, 'id' | 'expires_at'>> = z
+export const invoiceCreateSchema = z
 	.object({
-		title: z.string(),
-		description: z.string().max(512).optional(),
-		price: z.number().min(INVOICE_MIN_AMOUNT),
+		title: z.string().min(2).max(40),
+		description: z.string().max(512).nullable().optional(),
+		price: z.number().min(INVOICE_MIN_AMOUNT).max(1000000),
 		recipient_address: z
 			.string()
-			.refine((value) =>
-				/^nano_[13456789abcdefghijkmnopqrstuwxyz]{60}$/.test(value)
-			),
-		metadata: z.record(z.unknown()).optional(),
+			.regex(/^nano_[13456789abcdefghijkmnopqrstuwxyz]{60}$/),
+		metadata: z.object({}).nullable().optional(),
 		redirect_url: z.string().url().max(512).nullable().optional(),
 		service_id: z.string()
 	})
-	.refine(
-		(data) =>
-			!!data.title &&
-			!!data.price &&
-			!!data.recipient_address &&
-			!! data.service_id
-	);
-
+	.strict();
 
 export const createInvoice = async (request: Request, env: Environment) => {
 	const body = await request.json();
@@ -40,12 +35,15 @@ export const createInvoice = async (request: Request, env: Environment) => {
 		recipient_address,
 		service_id,
 		redirect_url
-	} = InvoiceSchema.parse(body);
+	} = invoiceCreateSchema.parse(body);
 
 	const currency = "XNO";
 	const expires_at = new Date(Date.now() + INVOICE_EXPIRATION).toISOString();
 
-	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+	const supabase = createClient<Database>(
+		env.SUPABASE_URL,
+		env.SUPABASE_SECRET_KEY
+	);
 
 	const id = generateInvoiceId();
 
