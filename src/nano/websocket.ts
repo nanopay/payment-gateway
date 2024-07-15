@@ -1,132 +1,126 @@
 interface SendEvent {
-    from: string;
-    to: string;
-    amount: string;
-    hash: string;
-    timestamp: number;
+	from: string;
+	to: string;
+	amount: string;
+	hash: string;
+	timestamp: number;
 }
 
 export default class NanoWebsocket {
+	wsURL: string;
+	private ws: WebSocket | null = null;
+	private listeners: ((data: SendEvent) => void)[] = [];
+	closedByClient = false;
 
-    wsURL: string;
-    private ws: WebSocket | null = null;
-    private listeners: ((data: SendEvent) => void)[] = []
-    closedByClient = false;
+	constructor(wsUrl: string) {
+		// Using HTTP instead WS to work with fetch
+		this.wsURL = wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+	}
 
-    constructor(wsUrl: string) {
-        // Using HTTP instead WS to work with fetch 
-        this.wsURL = wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
-    }
+	async connect() {
+		if (this.ws) {
+			return this.ws;
+		}
 
-    async connect() {
+		// Make a fetch request including `Upgrade: websocket` header.
+		// The Workers Runtime will automatically handle other requirements
+		// of the WebSocket protocol, like the Sec-WebSocket-Key header.
+		let resp = await fetch(this.wsURL, {
+			headers: {
+				Upgrade: 'websocket',
+			},
+		});
 
-        if (this.ws) {
-            return this.ws;
-        }
+		if (!resp.webSocket) {
+			throw new Error("server didn't accept WebSocket");
+		}
 
-        // Make a fetch request including `Upgrade: websocket` header.
-        // The Workers Runtime will automatically handle other requirements
-        // of the WebSocket protocol, like the Sec-WebSocket-Key header.
-        let resp = await fetch(this.wsURL, {
-            headers: {
-                Upgrade: 'websocket',
-            },
-        });
+		// If the WebSocket handshake completed successfully, then the
+		// response has a `webSocket` property.
+		this.ws = resp.webSocket;
 
-        if (!resp.webSocket) {
-            throw new Error("server didn't accept WebSocket");
-        }
+		// Call accept() to indicate that you'll be handling the socket here
+		// in JavaScript, as opposed to returning it on to a client.
+		this.ws.accept();
 
-        // If the WebSocket handshake completed successfully, then the
-        // response has a `webSocket` property.
-        this.ws = resp.webSocket;
+		// keep alive
+		const keepAliveInterval = setInterval(() => {
+			if (this.ws?.readyState === WebSocket.READY_STATE_OPEN) {
+				this.ws?.send(JSON.stringify({ ping: 'pong' }));
+			} else {
+				clearInterval(keepAliveInterval);
+			}
+		}, 15000);
 
-        // Call accept() to indicate that you'll be handling the socket here
-        // in JavaScript, as opposed to returning it on to a client.
-        this.ws.accept();
+		this.ws.addEventListener('message', (msg) => {
+			const data = JSON.parse(msg.data as string);
+			if (data.message?.block?.subtype === 'send') {
+				this.listeners.forEach((listener) => {
+					listener({
+						from: data.message.block.account,
+						amount: data.message.amount,
+						hash: data.message.hash,
+						to: data.message.block.link_as_account,
+						timestamp: Number(data.time),
+					});
+				});
+			}
+		});
 
-        // keep alive
-        const keepAliveInterval = setInterval(() => {
-            if (this.ws?.readyState === WebSocket.READY_STATE_OPEN) {
-                this.ws?.send(JSON.stringify({ "ping": "pong" }));
-            } else {
-                clearInterval(keepAliveInterval);
-            }
-        }, 15000);
+		return this.ws;
+	}
 
-        this.ws.addEventListener('message', (msg) => {
-            const data = JSON.parse(msg.data as string);
-            if (data.message?.block?.subtype === 'send') {
-                this.listeners.forEach((listener) => {
-                    listener({
-                        from: data.message.block.account,
-                        amount: data.message.amount,
-                        hash: data.message.hash,
-                        to: data.message.block.link_as_account,
-                        timestamp: Number(data.time)
-                    });
-                })
+	subscribe(account: string) {
+		this.check();
 
-            }
-        })
+		const confirmation_subscription = {
+			action: 'subscribe',
+			topic: 'confirmation',
+			options: {
+				accounts: [account],
+			},
+		};
 
-        return this.ws;
-    }
+		this.ws?.send(JSON.stringify(confirmation_subscription));
+	}
 
-    subscribe(account: string) {
+	unsubscribe(account: string) {
+		this.check();
 
-        this.check();
+		const confirmation_subscription = {
+			action: 'unsubscribe',
+			topic: 'confirmation',
+			options: {
+				accounts: [account],
+			},
+		};
 
-        const confirmation_subscription = {
-            "action": "subscribe",
-            "topic": "confirmation",
-            "options": {
-                "accounts": [account]
-            }
-        }
+		this.ws?.send(JSON.stringify(confirmation_subscription));
+	}
 
-        this.ws?.send(JSON.stringify(confirmation_subscription));
-    }
+	onError(handler: EventListenerOrEventListenerObject<ErrorEvent>) {
+		this.check();
+		this.ws?.addEventListener('error', handler);
+	}
 
-    unsubscribe(account: string) {
+	onClose(handler: EventListenerOrEventListenerObject<CloseEvent>) {
+		this.check();
+		this.ws?.addEventListener('close', handler);
+	}
 
-        this.check();
+	onPayment(handler: (data: SendEvent) => void) {
+		this.listeners.push(handler);
+	}
 
-        const confirmation_subscription = {
-            "action": "unsubscribe",
-            "topic": "confirmation",
-            "options": {
-                "accounts": [account]
-            }
-        }
+	close() {
+		this.check();
+		this.closedByClient = true;
+		this.ws?.close();
+	}
 
-        this.ws?.send(JSON.stringify(confirmation_subscription));
-    }
-
-    onError(handler: EventListenerOrEventListenerObject<ErrorEvent>) {
-        this.check();
-        this.ws?.addEventListener('error', handler)
-    }
-
-    onClose(handler: EventListenerOrEventListenerObject<CloseEvent>) {
-        this.check();
-        this.ws?.addEventListener('close', (handler))
-    }
-
-    onPayment(handler: (data: SendEvent) => void) {
-        this.listeners.push(handler)
-    }
-
-    close() {
-        this.check();
-        this.closedByClient = true;
-        this.ws?.close();
-    }
-
-    check() {
-        if (!this.ws) {
-            throw new Error("WebSocket is not initialized");
-        }
-    }
-
+	check() {
+		if (!this.ws) {
+			throw new Error('WebSocket is not initialized');
+		}
+	}
 }

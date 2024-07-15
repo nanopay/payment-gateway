@@ -1,4 +1,4 @@
-import { Database } from "./supabase";
+import { Database } from './supabase';
 
 export interface Queues {
 	PAYMENT_LISTENER_QUEUE: Queue;
@@ -30,21 +30,15 @@ export interface Environment extends Queues, KVNamespaces {
 	WORKER_URLS: string;
 }
 
-export type Payment = Omit<
-	Database["public"]["Tables"]["payments"]["Insert"],
-	"invoice_id"
->;
+export type Payment = Omit<Database['public']['Tables']['payments']['Insert'], 'invoice_id'>;
 
-export type Service = Database["public"]["Tables"]["services"]["Row"];
+export type Service = Database['public']['Tables']['services']['Row'];
 
-export type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
+export type Invoice = Database['public']['Tables']['invoices']['Row'];
 
-export type Webhook = Database["public"]["Tables"]["webhooks"]["Row"];
+export type Webhook = Database['public']['Tables']['webhooks']['Row'];
 
-export type WebhookDelivery = Omit<
-	Database["public"]["Tables"]["webhooks_deliveries"]["Insert"],
-	"request_body"
-> & {
+export type WebhookDelivery = Omit<Database['public']['Tables']['webhooks_deliveries']['Insert'], 'request_body'> & {
 	request_body: {
 		invoice: Invoice;
 		payment: Payment;

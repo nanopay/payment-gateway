@@ -1,9 +1,9 @@
-import { NotFoundException, UnauthorizedException } from "./responses";
-import { Environment } from "./types";
+import { NotFoundException, UnauthorizedException } from './responses';
+import { Environment } from './types';
 
-import { queue } from "./queues";
-import { createInvoice } from "./api/create-invoice";
-import { getInvoice } from "./api/get-invoice";
+import { queue } from './queues';
+import { createInvoice } from './api/create-invoice';
+import { getInvoice } from './api/get-invoice';
 
 /*
  * This is the main entry point for your Worker.
@@ -13,32 +13,25 @@ import { getInvoice } from "./api/get-invoice";
  */
 export default {
 	async fetch(request: Request, env: Environment): Promise<Response> {
-
 		// Check authorization
-		const authorizationHeader = request.headers.get("Authorization");
-		const bearerToken = authorizationHeader?.split(" ")[1];
+		const authorizationHeader = request.headers.get('Authorization');
+		const bearerToken = authorizationHeader?.split(' ')[1];
 		const authorized = bearerToken === env.AUTH_TOKEN;
 		if (!authorized) {
 			return UnauthorizedException();
 		}
 
 		// POST /invoices
-		if (
-			request.method === "POST" &&
-			new URL(request.url).pathname === "/invoices"
-		) {
+		if (request.method === 'POST' && new URL(request.url).pathname === '/invoices') {
 			return createInvoice(request, env);
 		}
 
 		// GET /invoices/[id]
-		if (
-			request.method === "GET" &&
-			new URL(request.url).pathname.startsWith("/invoices/")
-		) {
+		if (request.method === 'GET' && new URL(request.url).pathname.startsWith('/invoices/')) {
 			return getInvoice(request, env);
 		}
 
 		return NotFoundException();
 	},
-	queue
+	queue,
 };

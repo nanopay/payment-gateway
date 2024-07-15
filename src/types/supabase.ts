@@ -1,10 +1,4 @@
-export type Json =
-	| string
-	| number
-	| boolean
-	| null
-	| { [key: string]: Json | undefined }
-	| Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
 	public: {
@@ -39,12 +33,12 @@ export type Database = {
 				};
 				Relationships: [
 					{
-						foreignKeyName: "api_keys_service_id_fkey";
-						columns: ["service_id"];
+						foreignKeyName: 'api_keys_service_id_fkey';
+						columns: ['service_id'];
 						isOneToOne: false;
-						referencedRelation: "services";
-						referencedColumns: ["id"];
-					}
+						referencedRelation: 'services';
+						referencedColumns: ['id'];
+					},
 				];
 			};
 			invoices: {
@@ -63,7 +57,7 @@ export type Database = {
 					redirect_url: string | null;
 					refunded_amount: number;
 					service_id: string;
-					status: Database["public"]["Enums"]["invoice_status"];
+					status: Database['public']['Enums']['invoice_status'];
 					title: string;
 				};
 				Insert: {
@@ -81,7 +75,7 @@ export type Database = {
 					redirect_url?: string | null;
 					refunded_amount?: number;
 					service_id: string;
-					status?: Database["public"]["Enums"]["invoice_status"];
+					status?: Database['public']['Enums']['invoice_status'];
 					title: string;
 				};
 				Update: {
@@ -99,17 +93,17 @@ export type Database = {
 					redirect_url?: string | null;
 					refunded_amount?: number;
 					service_id?: string;
-					status?: Database["public"]["Enums"]["invoice_status"];
+					status?: Database['public']['Enums']['invoice_status'];
 					title?: string;
 				};
 				Relationships: [
 					{
-						foreignKeyName: "invoices_service_id_fkey";
-						columns: ["service_id"];
+						foreignKeyName: 'invoices_service_id_fkey';
+						columns: ['service_id'];
 						isOneToOne: false;
-						referencedRelation: "services";
-						referencedColumns: ["id"];
-					}
+						referencedRelation: 'services';
+						referencedColumns: ['id'];
+					},
 				];
 			};
 			payments: {
@@ -148,12 +142,12 @@ export type Database = {
 				};
 				Relationships: [
 					{
-						foreignKeyName: "payments_invoice_id_fkey";
-						columns: ["invoice_id"];
+						foreignKeyName: 'payments_invoice_id_fkey';
+						columns: ['invoice_id'];
 						isOneToOne: false;
-						referencedRelation: "invoices";
-						referencedColumns: ["id"];
-					}
+						referencedRelation: 'invoices';
+						referencedColumns: ['id'];
+					},
 				];
 			};
 			profiles: {
@@ -180,12 +174,12 @@ export type Database = {
 				};
 				Relationships: [
 					{
-						foreignKeyName: "profiles_user_id_fkey";
-						columns: ["user_id"];
+						foreignKeyName: 'profiles_user_id_fkey';
+						columns: ['user_id'];
 						isOneToOne: true;
-						referencedRelation: "users";
-						referencedColumns: ["id"];
-					}
+						referencedRelation: 'users';
+						referencedColumns: ['id'];
+					},
 				];
 			};
 			reserved_names: {
@@ -248,12 +242,12 @@ export type Database = {
 				};
 				Relationships: [
 					{
-						foreignKeyName: "services_user_id_fkey";
-						columns: ["user_id"];
+						foreignKeyName: 'services_user_id_fkey';
+						columns: ['user_id'];
 						isOneToOne: false;
-						referencedRelation: "users";
-						referencedColumns: ["id"];
-					}
+						referencedRelation: 'users';
+						referencedColumns: ['id'];
+					},
 				];
 			};
 			settings: {
@@ -310,12 +304,12 @@ export type Database = {
 				};
 				Relationships: [
 					{
-						foreignKeyName: "hooks_service_id_fkey";
-						columns: ["service_id"];
+						foreignKeyName: 'hooks_service_id_fkey';
+						columns: ['service_id'];
 						isOneToOne: false;
-						referencedRelation: "services";
-						referencedColumns: ["id"];
-					}
+						referencedRelation: 'services';
+						referencedColumns: ['id'];
+					},
 				];
 			};
 			webhooks_deliveries: {
@@ -369,12 +363,12 @@ export type Database = {
 				};
 				Relationships: [
 					{
-						foreignKeyName: "webhook_deliveries_webhook_id_fkey";
-						columns: ["webhook_id"];
+						foreignKeyName: 'webhook_deliveries_webhook_id_fkey';
+						columns: ['webhook_id'];
 						isOneToOne: false;
-						referencedRelation: "webhooks";
-						referencedColumns: ["id"];
-					}
+						referencedRelation: 'webhooks';
+						referencedColumns: ['id'];
+					},
 				];
 			};
 		};
@@ -413,7 +407,7 @@ export type Database = {
 			};
 		};
 		Enums: {
-			invoice_status: "pending" | "paid" | "expired" | "error";
+			invoice_status: 'pending' | 'paid' | 'expired' | 'error';
 		};
 		CompositeTypes: {
 			[_ in never]: never;
@@ -421,84 +415,72 @@ export type Database = {
 	};
 };
 
-type PublicSchema = Database[Extract<keyof Database, "public">];
+type PublicSchema = Database[Extract<keyof Database, 'public'>];
 
 export type Tables<
-	PublicTableNameOrOptions extends
-		| keyof (PublicSchema["Tables"] & PublicSchema["Views"])
-		| { schema: keyof Database },
+	PublicTableNameOrOptions extends keyof (PublicSchema['Tables'] & PublicSchema['Views']) | { schema: keyof Database },
 	TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-		? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-				Database[PublicTableNameOrOptions["schema"]]["Views"])
-		: never = never
+		? keyof (Database[PublicTableNameOrOptions['schema']]['Tables'] & Database[PublicTableNameOrOptions['schema']]['Views'])
+		: never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-	? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-			Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+	? (Database[PublicTableNameOrOptions['schema']]['Tables'] & Database[PublicTableNameOrOptions['schema']]['Views'])[TableName] extends {
 			Row: infer R;
-	  }
+		}
 		? R
 		: never
-	: PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-			PublicSchema["Views"])
-	? (PublicSchema["Tables"] &
-			PublicSchema["Views"])[PublicTableNameOrOptions] extends {
-			Row: infer R;
-	  }
-		? R
-		: never
-	: never;
+	: PublicTableNameOrOptions extends keyof (PublicSchema['Tables'] & PublicSchema['Views'])
+		? (PublicSchema['Tables'] & PublicSchema['Views'])[PublicTableNameOrOptions] extends {
+				Row: infer R;
+			}
+			? R
+			: never
+		: never;
 
 export type TablesInsert<
-	PublicTableNameOrOptions extends
-		| keyof PublicSchema["Tables"]
-		| { schema: keyof Database },
+	PublicTableNameOrOptions extends keyof PublicSchema['Tables'] | { schema: keyof Database },
 	TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-		? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-		: never = never
+		? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
+		: never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-	? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+	? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
 			Insert: infer I;
-	  }
+		}
 		? I
 		: never
-	: PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-	? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-			Insert: infer I;
-	  }
-		? I
-		: never
-	: never;
+	: PublicTableNameOrOptions extends keyof PublicSchema['Tables']
+		? PublicSchema['Tables'][PublicTableNameOrOptions] extends {
+				Insert: infer I;
+			}
+			? I
+			: never
+		: never;
 
 export type TablesUpdate<
-	PublicTableNameOrOptions extends
-		| keyof PublicSchema["Tables"]
-		| { schema: keyof Database },
+	PublicTableNameOrOptions extends keyof PublicSchema['Tables'] | { schema: keyof Database },
 	TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-		? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-		: never = never
+		? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
+		: never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-	? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+	? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
 			Update: infer U;
-	  }
+		}
 		? U
 		: never
-	: PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-	? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-			Update: infer U;
-	  }
-		? U
-		: never
-	: never;
+	: PublicTableNameOrOptions extends keyof PublicSchema['Tables']
+		? PublicSchema['Tables'][PublicTableNameOrOptions] extends {
+				Update: infer U;
+			}
+			? U
+			: never
+		: never;
 
 export type Enums<
-	PublicEnumNameOrOptions extends
-		| keyof PublicSchema["Enums"]
-		| { schema: keyof Database },
+	PublicEnumNameOrOptions extends keyof PublicSchema['Enums'] | { schema: keyof Database },
 	EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-		? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
-		: never = never
+		? keyof Database[PublicEnumNameOrOptions['schema']]['Enums']
+		: never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
-	? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-	: PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-	? PublicSchema["Enums"][PublicEnumNameOrOptions]
-	: never;
+	? Database[PublicEnumNameOrOptions['schema']]['Enums'][EnumName]
+	: PublicEnumNameOrOptions extends keyof PublicSchema['Enums']
+		? PublicSchema['Enums'][PublicEnumNameOrOptions]
+		: never;

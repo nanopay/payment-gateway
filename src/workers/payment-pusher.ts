@@ -1,5 +1,5 @@
-import { pusherSend } from "../pusher/pusher";
-import { Environment, MessageBody } from "../types";
+import { pusherSend } from '../pusher/pusher';
+import { Environment, MessageBody } from '../types';
 
 export const paymentPusher = async (message: MessageBody, env: Environment) => {
 	// Send new payments to the pusher channel
@@ -7,10 +7,10 @@ export const paymentPusher = async (message: MessageBody, env: Environment) => {
 	const { payments, invoice } = message;
 
 	if (!payments) {
-		throw new Error("Missing payments");
+		throw new Error('Missing payments');
 	}
 	if (!invoice) {
-		throw new Error("Missing invoice");
+		throw new Error('Missing invoice');
 	}
 
 	const paid_total = payments.reduce((acc, payment) => {
@@ -24,14 +24,14 @@ export const paymentPusher = async (message: MessageBody, env: Environment) => {
 			payments,
 			price: invoice.price,
 			paid_total,
-			remaining
+			remaining,
 		},
-		name: remaining > 0 ? "invoice.partially_paid" : "invoice.paid",
+		name: remaining > 0 ? 'invoice.partially_paid' : 'invoice.paid',
 		channel: invoice.id,
 		config: {
 			appId: env.PUSHER_APP_ID,
 			key: env.PUSHER_KEY,
-			secret: env.PUSHER_SECRET
-		}
+			secret: env.PUSHER_SECRET,
+		},
 	});
 };

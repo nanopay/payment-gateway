@@ -1,14 +1,13 @@
-import { INVOICE_MIN_AMOUNT } from "../constants";
-import NanoWebsocket from "../nano/websocket";
-import { Environment, MessageBody, Payment } from "../types";
-import { parseTime, rawToNano } from "../utils";
+import { INVOICE_MIN_AMOUNT } from '../constants';
+import NanoWebsocket from '../nano/websocket';
+import { Environment, MessageBody, Payment } from '../types';
+import { parseTime, rawToNano } from '../utils';
 
 export const paymentListener = async (message: MessageBody, env: Environment) => {
-
 	const { invoice, service, webhooks } = message;
 
 	if (!invoice.pay_address) {
-		throw new Error("Missing invoice");
+		throw new Error('Missing invoice');
 	}
 
 	// Detect new payments
@@ -35,20 +34,15 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 		}
 
 		if (e.code !== 1000 || !nanoWS.closedByClient) {
-			throw new Error(
-				`Websocket connection closed: ${env.NANO_WEBSOCKET_URL} ${
-					e.reason ? ", " + e.reason : ""
-				}`
-			);
+			throw new Error(`Websocket connection closed: ${env.NANO_WEBSOCKET_URL} ${e.reason ? ', ' + e.reason : ''}`);
 		}
 	});
 
 	nanoWS.onPayment(async (payment) => {
-
 		console.info(`Payment received: ${payment}`);
 
 		if (!invoice.pay_address) {
-			throw new Error("Missing invoice");
+			throw new Error('Missing invoice');
 		}
 
 		if (payment.from === invoice.pay_address) {
@@ -58,11 +52,11 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 		const newPayment = {
 			...payment,
 			amount_raws: payment.amount,
-			amount: rawToNano(payment.amount)
+			amount: rawToNano(payment.amount),
 		};
 
 		if (newPayment.amount < INVOICE_MIN_AMOUNT) {
-			console.info("Payment amount too low:", newPayment.amount);
+			console.info('Payment amount too low:', newPayment.amount);
 			return;
 		}
 
@@ -79,13 +73,13 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 			invoice,
 			service,
 			webhooks,
-			payment: newPayment
+			payment: newPayment,
 		});
 
 		// Send the payment to the worker to push to the channel
 		await env.PAYMENT_PUSHER_QUEUE.send({
 			invoice,
-			payments: payments
+			payments: payments,
 		});
 
 		if (paid_total >= invoice.price) {
@@ -93,7 +87,7 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 
 			await env.PAYMENT_RECEIVER_QUEUE.send({
 				invoice,
-				payments: payments
+				payments: payments,
 			});
 
 			nanoWS.close();
@@ -121,5 +115,4 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 		});
 
 	await Promise.race([sleepTimeout(), isClosed()]);
-
 };

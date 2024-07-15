@@ -1,19 +1,15 @@
-import { Environment, MessageBody } from "./types";
-import { paymentListener } from "./workers/payment-listener";
-import { paymentWrite } from "./workers/payment-write";
-import { paymentReceiver } from "./workers/payment-receiver";
-import { paymentSender } from "./workers/payment-sender";
-import { paymentPusher } from "./workers/payment-pusher";
-import { webhookDelivery } from "./workers/webhook-delivery";
-import { webhookDeliveryWrite } from "./workers/webhook-delivery-write";
+import { Environment, MessageBody } from './types';
+import { paymentListener } from './workers/payment-listener';
+import { paymentWrite } from './workers/payment-write';
+import { paymentReceiver } from './workers/payment-receiver';
+import { paymentSender } from './workers/payment-sender';
+import { paymentPusher } from './workers/payment-pusher';
+import { webhookDelivery } from './workers/webhook-delivery';
+import { webhookDeliveryWrite } from './workers/webhook-delivery-write';
 
-export const queue = async (
-	batch: MessageBatch<MessageBody>,
-	env: Environment,
-	ctx: ExecutionContext
-): Promise<void> => {
+export const queue = async (batch: MessageBatch<MessageBody>, env: Environment, ctx: ExecutionContext): Promise<void> => {
 	if (batch.messages.length > 1) {
-		console.error("Cannot process more than one message at a time");
+		console.error('Cannot process more than one message at a time');
 		return;
 	}
 
@@ -22,40 +18,40 @@ export const queue = async (
 
 	try {
 		switch (batch.queue) {
-			case "payment-listener-queue":
+			case 'payment-listener-queue':
 				await paymentListener(message, env);
 				break;
 
-			case "payment-write-queue":
+			case 'payment-write-queue':
 				await paymentWrite(message, env);
 				break;
 
-			case "payment-receiver-queue":
+			case 'payment-receiver-queue':
 				await paymentReceiver(message, env);
 				break;
 
-			case "payment-sender-queue":
+			case 'payment-sender-queue':
 				await paymentSender(message, env);
 				break;
 
-			case "payment-pusher-queue":
+			case 'payment-pusher-queue':
 				await paymentPusher(message, env);
 				break;
 
-			case "webhook-delivery-queue":
+			case 'webhook-delivery-queue':
 				await webhookDelivery(message, env);
 				break;
 
-			case "webhook-delivery-write-queue":
+			case 'webhook-delivery-write-queue':
 				await webhookDeliveryWrite(message, env);
 				break;
 
 			default:
 		}
 	} catch (e: any) {
-		if (e.message === "PaymentTimeout") {
+		if (e.message === 'PaymentTimeout') {
 			// only log the timeout
-			console.info("Payment Timeout for invoice", invoice.id);
+			console.info('Payment Timeout for invoice', invoice.id);
 		} else {
 			// return an error to retry the batch
 			console.error(e);

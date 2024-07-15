@@ -1,8 +1,8 @@
-import { v4 as uuid } from "uuid";
-import { WEBHOOK_RETRY, WEBHOOK_DELIVERY_TIMEOUT } from "../constants";
-import { Environment, MessageBody } from "../types";
-import { fetchWithTimeout, getHeaders } from "../utils";
-import { sign } from "../utils/sign";
+import { v4 as uuid } from 'uuid';
+import { WEBHOOK_RETRY, WEBHOOK_DELIVERY_TIMEOUT } from '../constants';
+import { Environment, MessageBody } from '../types';
+import { fetchWithTimeout, getHeaders } from '../utils';
+import { sign } from '../utils/sign';
 
 export const webhookDelivery = async (message: MessageBody, env: Environment) => {
 	// Send new payments to the webhook making a POST with json data
@@ -10,15 +10,15 @@ export const webhookDelivery = async (message: MessageBody, env: Environment) =>
 	const { invoice, payment, service, webhook, webhook_type } = message;
 
 	if (!payment) {
-		throw new Error("Missing payment");
+		throw new Error('Missing payment');
 	}
 
 	if (!webhook) {
-		throw new Error("Missing webhook");
+		throw new Error('Missing webhook');
 	}
 
 	if (!webhook_type) {
-		throw new Error("Missing webhook_type");
+		throw new Error('Missing webhook_type');
 	}
 
 	try {
@@ -30,23 +30,23 @@ export const webhookDelivery = async (message: MessageBody, env: Environment) =>
 			type: webhook_type,
 			invoice,
 			service,
-			payment
+			payment,
 		};
 
 		const requestHeaders: HeadersInit = {
-			"Content-Type": "application/json"
+			'Content-Type': 'application/json',
 		};
 
 		if (webhook.secret) {
-			const signature = await sign(JSON.stringify(requestBody), webhook.secret);			
-			requestHeaders["X-Signature"] = signature;
+			const signature = await sign(JSON.stringify(requestBody), webhook.secret);
+			requestHeaders['X-Signature'] = signature;
 		}
 
 		const response = await fetchWithTimeout(webhook.url, {
-			method: "POST",
+			method: 'POST',
 			headers: requestHeaders,
 			body: requestBody,
-			timeout: WEBHOOK_DELIVERY_TIMEOUT
+			timeout: WEBHOOK_DELIVERY_TIMEOUT,
 		});
 
 		const response_body = await response.text();
@@ -71,11 +71,11 @@ export const webhookDelivery = async (message: MessageBody, env: Environment) =>
 				response_body,
 				started_at,
 				completed_at,
-				redelivery: false
-			}
+				redelivery: false,
+			},
 		});
 	} catch (e: any) {
-		console.error("Webhook Error", e);
+		console.error('Webhook Error', e);
 		if (WEBHOOK_RETRY) {
 			// Throw so queue automatically retries
 			throw new Error(e.message);
