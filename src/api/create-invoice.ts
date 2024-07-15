@@ -119,6 +119,8 @@ export const createInvoice = async (request: Request, env: Environment) => {
 		webhooks: (service as any)?.webhooks || []
 	});
 
+	console.info(`New Invoice Created: ${id}`);
+
 	return SuccessResponse({
 		id,
 		pay_address,

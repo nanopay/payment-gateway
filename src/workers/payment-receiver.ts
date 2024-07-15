@@ -32,7 +32,7 @@ export const paymentReceiver = async (message: MessageBody, env: Environment) =>
             payment.amount_raws
         );
 
-        console.info("New Payment Received:", paymentReceiveHash);
+        console.info(`New Payment Received: ${paymentReceiveHash}`);
     }
 
     await env.PAYMENT_SENDER_QUEUE.send({

@@ -25,5 +25,5 @@ export const webhookDeliveryWrite = async (
 		throw new Error(writeWebhookError.message);
 	}
 
-	console.info("New Webhook Delivery Stored:", data.id);
+	console.info(`New Webhook Delivery Stored: ${data.id}`);
 };

@@ -29,7 +29,7 @@ export const paymentWrite = async (
 	if (error) {
 		throw new Error(error.message);
 	}
-	console.info("New Payment Stored:", payment.hash);
+	console.info(`New Payment Stored: ${payment.hash}`);
 
 	for (const webhook of webhooks) {
 		if (webhook.active && webhook.event_types.includes("invoice.paid")) {

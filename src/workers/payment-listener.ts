@@ -45,7 +45,7 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 
 	nanoWS.onPayment(async (payment) => {
 
-		console.log("Payment received", payment);
+		console.info(`Payment received: ${payment}`);
 
 		if (!invoice.pay_address) {
 			throw new Error("Missing invoice");
@@ -66,7 +66,7 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 			return;
 		}
 
-		console.info("New Payment:", payment.hash);
+		console.info(`New Payment: ${payment.hash}`);
 
 		payments.push(newPayment);
 

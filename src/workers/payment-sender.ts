@@ -27,5 +27,5 @@ export const paymentSender = async (message: MessageBody, env: Environment) => {
 		invoice.recipient_address
 	);
 
-	console.info("New Payment Sent:", paymentSendHash);
+	console.info(`New Payment Sent: ${paymentSendHash}`);
 };
