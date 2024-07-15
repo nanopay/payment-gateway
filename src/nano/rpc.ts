@@ -61,8 +61,8 @@ export default class NanoRPC {
                 body: data,
                 timeout: this.timeout
             });
-            const body = response.json();
-            if (body instanceof Object && "error" in body) {
+            const body = await response.json();
+            if (body instanceof Object && "error" in body && body.error) {
                 throw new Error(`RPC error: ${body.error}`);
             }
             return body as TRPCResponse;
