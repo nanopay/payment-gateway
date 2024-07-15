@@ -1,6 +1,6 @@
 name = "payment-gateway"
 main = "src/index.ts"
-compatibility_date = "2023-02-14"
+compatibility_date = "2024-07-12"
 
 [[queues.producers]]
   queue = "payment-listener-queue"
