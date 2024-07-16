@@ -3,6 +3,7 @@ import { WEBHOOK_RETRY, WEBHOOK_DELIVERY_TIMEOUT } from '../constants';
 import { Environment, MessageBody } from '../types';
 import { fetchWithTimeout, getHeaders } from '../utils';
 import { sign } from '../utils/sign';
+import { logger } from '../logger';
 
 export const webhookDelivery = async (message: MessageBody, env: Environment) => {
 	// Send new payments to the webhook making a POST with json data
@@ -74,11 +75,16 @@ export const webhookDelivery = async (message: MessageBody, env: Environment) =>
 				redelivery: false,
 			},
 		});
-	} catch (e: any) {
-		console.error('Webhook Error', e);
+	} catch (error) {
+		logger.error('Webhook Error', {
+			invoice,
+			service,
+			webhook,
+			error: error instanceof Error ? error.message : JSON.stringify(error),
+		});
 		if (WEBHOOK_RETRY) {
 			// Throw so queue automatically retries
-			throw new Error(e.message);
+			throw error;
 		}
 	}
 };

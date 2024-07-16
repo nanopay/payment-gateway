@@ -6,15 +6,18 @@ import { paymentSender } from './workers/payment-sender';
 import { paymentPusher } from './workers/payment-pusher';
 import { webhookDelivery } from './workers/webhook-delivery';
 import { webhookDeliveryWrite } from './workers/webhook-delivery-write';
+import { logger } from './logger';
 
 export const queue = async (batch: MessageBatch<MessageBody>, env: Environment, ctx: ExecutionContext): Promise<void> => {
 	if (batch.messages.length > 1) {
-		console.error('Cannot process more than one message at a time');
+		logger.error('Cannot process more than one message at a time', {
+			queueName: batch.queue,
+			queueMessage: batch.messages,
+		});
 		return;
 	}
 
 	const message: MessageBody = batch.messages[0].body;
-	const invoice = message.invoice;
 
 	try {
 		switch (batch.queue) {
@@ -48,14 +51,18 @@ export const queue = async (batch: MessageBatch<MessageBody>, env: Environment, 
 
 			default:
 		}
-	} catch (e: any) {
-		if (e.message === 'PaymentTimeout') {
-			// only log the timeout
-			console.info('Payment Timeout for invoice', invoice.id);
+	} catch (error) {
+		const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+		if (errorMessage === 'PaymentTimeout') {
+			logger.info(`Payment Timeout for invoice: ${message.invoice.id}`);
 		} else {
+			logger.error('Error processing message in queue.', {
+				queueName: batch.queue,
+				queueMessage: message,
+				error: errorMessage,
+			});
 			// return an error to retry the batch
-			console.error(e);
-			throw new Error(e.message);
+			throw error;
 		}
 	}
 };

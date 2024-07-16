@@ -1,4 +1,5 @@
 import { INVOICE_MIN_AMOUNT } from '../constants';
+import { logger } from '../logger';
 import NanoWebsocket from '../nano/websocket';
 import { Environment, MessageBody, Payment } from '../types';
 import { parseTime, rawToNano } from '../utils';
@@ -39,7 +40,10 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 	});
 
 	nanoWS.onPayment(async (payment) => {
-		console.info(`Payment received: ${payment}`);
+		logger.info(`Payment received: ${payment.amount}`, {
+			invoice,
+			payment,
+		});
 
 		if (!invoice.pay_address) {
 			throw new Error('Missing invoice');
@@ -56,11 +60,17 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 		};
 
 		if (newPayment.amount < INVOICE_MIN_AMOUNT) {
-			console.info('Payment amount too low:', newPayment.amount);
+			logger.warn(`Payment amount too low: ${newPayment.amount}`, {
+				invoice,
+				payment: newPayment,
+			});
 			return;
 		}
 
-		console.info(`New Payment: ${payment.hash}`);
+		logger.info(`New Payment: ${payment.hash}`, {
+			invoice,
+			payment: newPayment,
+		});
 
 		payments.push(newPayment);
 
@@ -98,7 +108,9 @@ export const paymentListener = async (message: MessageBody, env: Environment) =>
 		new Promise((resolve) => {
 			timeoutId = setTimeout(() => {
 				nanoWS.close();
-				console.info(`Invoice ${invoice.id} timeout`);
+				logger.info(`Invoice timeout: ${invoice.id}`, {
+					invoice,
+				});
 				resolve(true);
 			}, timeout);
 		});

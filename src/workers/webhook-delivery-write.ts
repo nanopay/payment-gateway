@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database, Environment, MessageBody } from '../types';
+import { logger } from '../logger';
 
 export const webhookDeliveryWrite = async (message: MessageBody, env: Environment) => {
 	const { webhook_delivery } = message;
@@ -15,5 +16,7 @@ export const webhookDeliveryWrite = async (message: MessageBody, env: Environmen
 		throw new Error(writeWebhookError.message);
 	}
 
-	console.info(`New Webhook Delivery Stored: ${data.id}`);
+	logger.info(`New Webhook Delivery Stored: ${data.id}`, {
+		webhook_delivery,
+	});
 };

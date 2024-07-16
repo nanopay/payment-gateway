@@ -5,6 +5,7 @@ import { INVOICE_EXPIRATION, INVOICE_MIN_AMOUNT } from '../constants';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import { deriveAddress, derivePublicKey, deriveSecretKey } from 'nanocurrency';
+import { logger } from '../logger';
 
 export const invoiceCreateSchema = z
 	.object({
@@ -58,12 +59,12 @@ export const createInvoice = async (request: Request, env: Environment) => {
 				description,
 				metadata,
 				service:services(name, display_name, avatar_url, description, id, website, contact_email, webhooks(*))
-			`,
+			`
 		)
 		.single();
 
 	if (error) {
-		console.error('Supabase error', error);
+		logger.error('Supabase error', error);
 		return BadRequestException(error.message);
 	}
 
@@ -97,12 +98,15 @@ export const createInvoice = async (request: Request, env: Environment) => {
 			? {
 					...service,
 					webhooks: undefined,
-				}
+			  }
 			: null,
 		webhooks: (service as any)?.webhooks || [],
 	});
 
-	console.info(`New Invoice Created: ${id}`);
+	logger.info(`New Invoice Created: ${id}`, {
+		invoice,
+		service,
+	});
 
 	return SuccessResponse({
 		id,

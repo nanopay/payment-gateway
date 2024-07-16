@@ -1,6 +1,7 @@
 import { deriveSecretKey } from 'nanocurrency';
 import NanoWallet from '../nano/wallet';
 import { Environment, MessageBody } from '../types';
+import { logger } from '../logger';
 
 export const paymentReceiver = async (message: MessageBody, env: Environment) => {
 	const { invoice, payments } = message;
@@ -28,7 +29,9 @@ export const paymentReceiver = async (message: MessageBody, env: Environment) =>
 	for (const payment of payments) {
 		const { hash: paymentReceiveHash } = await wallet.receive(payment.hash, payment.amount_raws);
 
-		console.info(`New Payment Received: ${paymentReceiveHash}`);
+		logger.info(`New Payment Received: ${paymentReceiveHash}`, {
+			...payment,
+		});
 	}
 
 	await env.PAYMENT_SENDER_QUEUE.send({

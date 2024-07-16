@@ -1,6 +1,7 @@
 import { deriveSecretKey } from 'nanocurrency';
 import NanoWallet from '../nano/wallet';
 import { Environment, MessageBody } from '../types';
+import { logger } from '../logger';
 
 export const paymentSender = async (message: MessageBody, env: Environment) => {
 	// Send nano transaction to recipient
@@ -25,5 +26,7 @@ export const paymentSender = async (message: MessageBody, env: Environment) => {
 
 	const { hash: paymentSendHash } = await wallet.sendAll(invoice.recipient_address);
 
-	console.info(`New Payment Sent: ${paymentSendHash}`);
+	logger.info(`New Payment Sent: ${paymentSendHash}`, {
+		invoice,
+	});
 };

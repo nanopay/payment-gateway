@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database, Environment, MessageBody } from '../types';
+import { logger } from '../logger';
 
 export const paymentWrite = async (message: MessageBody, env: Environment) => {
 	// Write new payments to the db
@@ -26,7 +27,10 @@ export const paymentWrite = async (message: MessageBody, env: Environment) => {
 	if (error) {
 		throw new Error(error.message);
 	}
-	console.info(`New Payment Stored: ${payment.hash}`);
+	logger.info(`New Payment Stored: ${payment.hash}`, {
+		invoiceId: invoice.id,
+		payment,
+	});
 
 	for (const webhook of webhooks) {
 		if (webhook.active && webhook.event_types.includes('invoice.paid')) {
