@@ -28,6 +28,7 @@ export interface Environment extends Queues, KVNamespaces {
 	REPRESENTATIVE: string;
 	RPC_URLS: string;
 	WORKER_URLS: string;
+	IS_LOCAL_MODE: boolean;
 }
 
 export type Payment = Omit<Database['public']['Tables']['payments']['Insert'], 'invoice_id'>;
