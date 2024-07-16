@@ -4,6 +4,8 @@ import { Environment } from './types';
 import { queue } from './queues';
 import { createInvoice } from './api/create-invoice';
 import { getInvoice } from './api/get-invoice';
+import { logger } from './logger';
+import { isFalsyLike } from './utils';
 
 /*
  * This is the main entry point for your Worker.
@@ -20,6 +22,9 @@ export default {
 		if (!authorized) {
 			return UnauthorizedException();
 		}
+
+		const localMode = !isFalsyLike(env.IS_LOCAL_MODE);
+		logger.setLocalDev(localMode);
 
 		// POST /invoices
 		if (request.method === 'POST' && new URL(request.url).pathname === '/invoices') {
