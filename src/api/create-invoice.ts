@@ -58,7 +58,7 @@ export const createInvoice = async (request: Request, env: Environment) => {
 				title,
 				description,
 				metadata,
-				service:services(name, display_name, avatar_url, description, id, website, contact_email, webhooks(*))
+				service:services(name, display_name, avatar_url, id, website, contact_email, webhooks(*))
 			`
 		)
 		.single();
