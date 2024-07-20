@@ -18,14 +18,6 @@ export const rawToNano = (raw: string) => {
 	return Number(fixedAmount);
 };
 
-export const parseTime = (time: string | number) => {
-	const date = new Date(time);
-	if (isNaN(date.getTime())) {
-		throw new Error('Invalid date');
-	}
-	return date.getTime();
-};
-
 export const getHeaders = (headers: Headers) => {
 	const result: Record<string, string> = {};
 	headers.forEach((value, key) => {
