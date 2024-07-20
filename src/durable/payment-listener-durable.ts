@@ -38,8 +38,8 @@ export class PaymentListenerDurable extends DurableObject<Env> {
 			throw new Error(e.message);
 		});
 
-		this.nanoWebsocket.onClose((e) => {
-			if (e.code !== 1000 || !this.nanoWebsocket.closedByClient) {
+		this.nanoWebsocket.onClose((e, closedByClient) => {
+			if (e.code !== 1000 || !closedByClient) {
 				throw new Error(`Websocket connection closed: ${this.env.NANO_WEBSOCKET_URL} ${e.reason ? ', ' + e.reason : ''}`);
 			}
 		});
@@ -51,14 +51,14 @@ export class PaymentListenerDurable extends DurableObject<Env> {
 			this.onPayment(payment, invoice, service, webhooks);
 		});
 
-		await this.alarm();
-
 		this.pendingInvoices.push({
 			id: invoice.id,
 			expiresAt: invoice.expires_at,
 			payAddress: invoice.pay_address,
 			payments: [],
 		});
+
+		await this.alarm();
 	}
 
 	private async onPayment(payment: SendEvent, invoice: Invoice, service: Service, webhooks: Webhook[]) {
@@ -147,7 +147,10 @@ export class PaymentListenerDurable extends DurableObject<Env> {
 	}
 
 	async alarm() {
-		this.pendingInvoices.forEach(async (activeInvoice) => {
+		/*
+			Alarm: Expire invoices, keep websocket connection alive or close it
+		*/
+		for (const activeInvoice of this.pendingInvoices) {
 			const expired = new Date(activeInvoice.expiresAt).getTime() < Date.now();
 			if (expired) {
 				logger.info(`Invoice expired: ${activeInvoice.id}`, {
@@ -156,15 +159,20 @@ export class PaymentListenerDurable extends DurableObject<Env> {
 				this.nanoWebsocket.unsubscribe(activeInvoice.payAddress);
 				this.removePendingInvoice(activeInvoice.id);
 			}
-		});
-		if (this.nanoWebsocket.listeningAccounts.length > 0) {
+		}
+		if (this.pendingInvoices.length > 0) {
 			const currentAlarm = await this.ctx.storage.getAlarm();
 			if (!currentAlarm) {
-				// Call alarm to keep websocket connection alive
-				this.ctx.storage.setAlarm(Date.now() + 1000 * 15);
+				const nearestExpiresAt = this.pendingInvoices.reduce((acc, activeInvoice) => {
+					return acc < new Date(activeInvoice.expiresAt).getTime() ? acc : new Date(activeInvoice.expiresAt).getTime();
+				}, Infinity);
+
+				const defaultScheduledTime = Date.now() + 1000 * 30; // 30 seconds
+				const scheduledTime = nearestExpiresAt < defaultScheduledTime ? nearestExpiresAt : defaultScheduledTime;
+
+				this.ctx.storage.setAlarm(scheduledTime);
 			}
 		} else {
-			// No more listening accounts, close the websocket connection
 			this.nanoWebsocket.close();
 		}
 	}
