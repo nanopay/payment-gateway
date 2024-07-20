@@ -1,5 +1,4 @@
 import { Environment, MessageBody } from './types';
-import { paymentListener } from './workers/payment-listener';
 import { paymentWrite } from './workers/payment-write';
 import { paymentReceiver } from './workers/payment-receiver';
 import { paymentSender } from './workers/payment-sender';
@@ -22,7 +21,9 @@ export const queue = async (batch: MessageBatch<MessageBody>, env: Environment, 
 	try {
 		switch (batch.queue) {
 			case 'payment-listener-queue':
-				await paymentListener(message, env);
+				const id: DurableObjectId = env.PAYMENT_LISTENER_DURABLE.idFromName('payment-listener-durable');
+				const stub = env.PAYMENT_LISTENER_DURABLE.get(id);
+				await stub.listen(message);
 				break;
 
 			case 'payment-write-queue':

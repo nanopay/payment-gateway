@@ -8,6 +8,11 @@ import { logger } from './logger';
 import { isFalsyLike } from './utils';
 
 /*
+ * Export our Durable Object classes here.
+ */
+export { PaymentListenerDurable } from './durable/payment-listener-durable';
+
+/*
  * This is the main entry point for your Worker.
  * This code is executed once per request.
  * You can use this to define your request and response handling.
