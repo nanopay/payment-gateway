@@ -85,3 +85,13 @@ logpush = true
   binding = "WALLET"
   preview_id = "ffd2e378dfc14bd99fa3cb56fe4f7508"
   id = "8cad36e3ec214e65bf9ef61f6f6880f1"
+
+[[durable_objects.bindings]]
+name = "PAYMENT_LISTENER_DURABLE"
+class_name = "PaymentListenerDurable"
+
+# Durable Object migrations.
+# Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#migrations
+[[migrations]]
+tag = "v1"
+new_classes = ["PaymentListenerDurable"]
