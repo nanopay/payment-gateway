@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { Database, Environment, MessageBody } from '../types';
+import { Database, MessageBody } from '../types';
 import { logger } from '../logger';
 
-export const paymentWrite = async (message: MessageBody, env: Environment) => {
+export const paymentWrite = async (message: MessageBody, env: Env) => {
 	// Write new payments to the db
 
 	const { invoice, payment, service, webhooks } = message;

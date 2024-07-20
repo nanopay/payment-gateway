@@ -1,5 +1,5 @@
 import { BadRequestException, ServerException, SuccessResponse } from '../responses';
-import { Database, Environment } from '../types';
+import { Database } from '../types';
 import { generateInvoiceId } from '../utils';
 import { INVOICE_EXPIRATION, INVOICE_MIN_AMOUNT } from '../constants';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ export const invoiceCreateSchema = z
 	})
 	.strict();
 
-export const createInvoice = async (request: Request, env: Environment) => {
+export const createInvoice = async (request: Request, env: Env) => {
 	const body = await request.json();
 
 	const { title, description, metadata, price, recipient_address, service_id, redirect_url } = invoiceCreateSchema.parse(body);

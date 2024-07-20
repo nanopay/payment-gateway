@@ -1,9 +1,9 @@
 import { deriveSecretKey } from 'nanocurrency';
 import NanoWallet from '../nano/wallet';
-import { Environment, MessageBody } from '../types';
+import { MessageBody } from '../types';
 import { logger } from '../logger';
 
-export const paymentSender = async (message: MessageBody, env: Environment) => {
+export const paymentSender = async (message: MessageBody, env: Env) => {
 	// Send nano transaction to recipient
 
 	const { invoice } = message;

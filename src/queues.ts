@@ -1,4 +1,4 @@
-import { Environment, MessageBody } from './types';
+import { MessageBody } from './types';
 import { paymentWrite } from './workers/payment-write';
 import { paymentReceiver } from './workers/payment-receiver';
 import { paymentSender } from './workers/payment-sender';
@@ -7,7 +7,7 @@ import { webhookDelivery } from './workers/webhook-delivery';
 import { webhookDeliveryWrite } from './workers/webhook-delivery-write';
 import { logger } from './logger';
 
-export const queue = async (batch: MessageBatch<MessageBody>, env: Environment, ctx: ExecutionContext): Promise<void> => {
+export const queue = async (batch: MessageBatch<MessageBody>, env: Env, ctx: ExecutionContext): Promise<void> => {
 	if (batch.messages.length > 1) {
 		logger.error('Cannot process more than one message at a time', {
 			queueName: batch.queue,

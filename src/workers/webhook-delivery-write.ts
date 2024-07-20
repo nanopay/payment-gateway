@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { Database, Environment, MessageBody } from '../types';
+import { Database, MessageBody } from '../types';
 import { logger } from '../logger';
 
-export const webhookDeliveryWrite = async (message: MessageBody, env: Environment) => {
+export const webhookDeliveryWrite = async (message: MessageBody, env: Env) => {
 	const { webhook_delivery } = message;
 
 	if (!webhook_delivery) {

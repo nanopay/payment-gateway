@@ -1,36 +1,5 @@
 import { Database } from './supabase';
 
-export interface Queues {
-	PAYMENT_LISTENER_QUEUE: Queue;
-	PAYMENT_WRITE_QUEUE: Queue;
-	PAYMENT_PUSHER_QUEUE: Queue;
-	WEBHOOK_DELIVERY_QUEUE: Queue;
-	WEBHOOK_DELIVERY_WRITE_QUEUE: Queue<{
-		invoice: Invoice;
-		webhook_delivery: WebhookDelivery;
-	}>;
-	PAYMENT_RECEIVER_QUEUE: Queue;
-	PAYMENT_SENDER_QUEUE: Queue;
-}
-
-export interface KVNamespaces {
-	WALLET: KVNamespace;
-}
-export interface Environment extends Queues, KVNamespaces {
-	AUTH_TOKEN: string;
-	SUPABASE_URL: string;
-	SUPABASE_SECRET_KEY: string;
-	NANO_WEBSOCKET_URL: string;
-	PUSHER_APP_ID: string;
-	PUSHER_KEY: string;
-	PUSHER_SECRET: string;
-	HOT_WALLET_SEED: string;
-	REPRESENTATIVE: string;
-	RPC_URLS: string;
-	WORKER_URLS: string;
-	IS_LOCAL_MODE: boolean;
-}
-
 export type Payment = Omit<Database['public']['Tables']['payments']['Insert'], 'invoice_id'>;
 
 export type Service = Database['public']['Tables']['services']['Row'];

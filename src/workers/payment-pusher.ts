@@ -1,7 +1,7 @@
 import { pusherSend } from '../pusher/pusher';
-import { Environment, MessageBody } from '../types';
+import { MessageBody } from '../types';
 
-export const paymentPusher = async (message: MessageBody, env: Environment) => {
+export const paymentPusher = async (message: MessageBody, env: Env) => {
 	// Send new payments to the pusher channel
 
 	const { payments, invoice } = message;

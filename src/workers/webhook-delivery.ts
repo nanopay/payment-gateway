@@ -1,11 +1,11 @@
 import { v4 as uuid } from 'uuid';
 import { WEBHOOK_RETRY, WEBHOOK_DELIVERY_TIMEOUT } from '../constants';
-import { Environment, MessageBody } from '../types';
+import { MessageBody } from '../types';
 import { fetchWithTimeout, getHeaders } from '../utils';
 import { sign } from '../utils/sign';
 import { logger } from '../logger';
 
-export const webhookDelivery = async (message: MessageBody, env: Environment) => {
+export const webhookDelivery = async (message: MessageBody, env: Env) => {
 	// Send new payments to the webhook making a POST with json data
 
 	const { invoice, payment, service, webhook, webhook_type } = message;

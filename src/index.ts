@@ -1,6 +1,4 @@
 import { NotFoundException, UnauthorizedException } from './responses';
-import { Environment } from './types';
-
 import { queue } from './queues';
 import { createInvoice } from './api/create-invoice';
 import { getInvoice } from './api/get-invoice';
@@ -19,7 +17,7 @@ export { PaymentListenerDurable } from './durable/payment-listener-durable';
  * Learn more about writing workers at https://developers.cloudflare.com/workers
  */
 export default {
-	async fetch(request: Request, env: Environment): Promise<Response> {
+	async fetch(request: Request, env: Env): Promise<Response> {
 		// Check authorization
 		const authorizationHeader = request.headers.get('Authorization');
 		const bearerToken = authorizationHeader?.split(' ')[1];

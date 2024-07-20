@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { Database, Environment } from '../types';
+import { Database } from '../types';
 import { NotFoundException, ServerException, SuccessResponse } from '../responses';
 
-export const getInvoice = async (request: Request, env: Environment) => {
+export const getInvoice = async (request: Request, env: Env) => {
 	const url = new URL(request.url);
 	const id = url.pathname.split('/invoices/').pop();
 
