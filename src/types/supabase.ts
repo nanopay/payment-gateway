@@ -8,7 +8,6 @@ export type Database = {
 					checksum: string;
 					created_at: string;
 					description: string | null;
-					id: number;
 					name: string;
 					scopes: string[];
 					service_id: string;
@@ -17,7 +16,6 @@ export type Database = {
 					checksum: string;
 					created_at?: string;
 					description?: string | null;
-					id?: number;
 					name: string;
 					scopes: string[];
 					service_id: string;
@@ -26,7 +24,6 @@ export type Database = {
 					checksum?: string;
 					created_at?: string;
 					description?: string | null;
-					id?: number;
 					name?: string;
 					scopes?: string[];
 					service_id?: string;
@@ -203,10 +200,10 @@ export type Database = {
 					avatar_url: string | null;
 					contact_email: string | null;
 					created_at: string;
-					display_name: string;
 					id: string;
 					invoices_count: number;
 					name: string;
+					slug: string;
 					user_id: string;
 					webhooks_count: number;
 					website: string | null;
@@ -216,10 +213,10 @@ export type Database = {
 					avatar_url?: string | null;
 					contact_email?: string | null;
 					created_at?: string;
-					display_name?: string;
 					id?: string;
 					invoices_count?: number;
-					name: string;
+					name?: string;
+					slug: string;
 					user_id?: string;
 					webhooks_count?: number;
 					website?: string | null;
@@ -229,10 +226,10 @@ export type Database = {
 					avatar_url?: string | null;
 					contact_email?: string | null;
 					created_at?: string;
-					display_name?: string;
 					id?: string;
 					invoices_count?: number;
 					name?: string;
+					slug?: string;
 					user_id?: string;
 					webhooks_count?: number;
 					website?: string | null;
