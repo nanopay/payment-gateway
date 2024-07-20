@@ -6,6 +6,10 @@ export const getInvoice = async (request: Request, env: Environment) => {
 	const url = new URL(request.url);
 	const id = url.pathname.split('/invoices/').pop();
 
+	if (!id) {
+		return NotFoundException();
+	}
+
 	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
 
 	const { data, error } = await supabase
