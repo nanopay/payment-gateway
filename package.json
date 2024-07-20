@@ -5,7 +5,8 @@
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev --local --port 44555"
+		"dev": "wrangler dev --local --port 44555",
+		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
 		"@supabase/supabase-js": "^2.8.0",
