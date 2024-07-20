@@ -1,4 +1,7 @@
-interface SendEvent {
+// Implements Nanocurrency Node Websocket
+// Documentation: https://docs.nano.org/integration-guides/websockets
+
+export interface SendEvent {
 	from: string;
 	to: string;
 	amount: string;
@@ -7,25 +10,26 @@ interface SendEvent {
 }
 
 export default class NanoWebsocket {
-	wsURL: string;
-	private ws: WebSocket | null = null;
+	websocketUrl: string;
+	private websocket: WebSocket | null = null;
 	private listeners: ((data: SendEvent) => void)[] = [];
+	listeningAccounts: string[] = [];
 	closedByClient = false;
 
-	constructor(wsUrl: string) {
+	constructor(websocketUrl: string) {
 		// Using HTTP instead WS to work with fetch
-		this.wsURL = wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+		this.websocketUrl = websocketUrl.replace('ws://', 'http://').replace('wss://', 'https://');
 	}
 
 	async connect() {
-		if (this.ws) {
-			return this.ws;
+		if (this.websocket) {
+			return this.websocket;
 		}
 
 		// Make a fetch request including `Upgrade: websocket` header.
 		// The Workers Runtime will automatically handle other requirements
 		// of the WebSocket protocol, like the Sec-WebSocket-Key header.
-		let resp = await fetch(this.wsURL, {
+		const resp = await fetch(this.websocketUrl, {
 			headers: {
 				Upgrade: 'websocket',
 			},
@@ -37,22 +41,22 @@ export default class NanoWebsocket {
 
 		// If the WebSocket handshake completed successfully, then the
 		// response has a `webSocket` property.
-		this.ws = resp.webSocket;
+		this.websocket = resp.webSocket as WebSocket;
 
 		// Call accept() to indicate that you'll be handling the socket here
 		// in JavaScript, as opposed to returning it on to a client.
-		this.ws.accept();
+		this.websocket.accept();
 
 		// keep alive
 		const keepAliveInterval = setInterval(() => {
-			if (this.ws?.readyState === WebSocket.READY_STATE_OPEN) {
-				this.ws?.send(JSON.stringify({ ping: 'pong' }));
+			if (this.websocket?.readyState === WebSocket.READY_STATE_OPEN) {
+				this.websocket?.send(JSON.stringify({ ping: 'pong' }));
 			} else {
 				clearInterval(keepAliveInterval);
 			}
 		}, 15000);
 
-		this.ws.addEventListener('message', (msg) => {
+		this.websocket.addEventListener('message', (msg) => {
 			const data = JSON.parse(msg.data as string);
 			if (data.message?.block?.subtype === 'send') {
 				this.listeners.forEach((listener) => {
@@ -67,45 +71,88 @@ export default class NanoWebsocket {
 			}
 		});
 
-		return this.ws;
+		// on error clear accounts
+		this.websocket.addEventListener('error', () => {
+			this.listeningAccounts = [];
+		});
+
+		// on close clear accounts
+		this.websocket.addEventListener('close', () => {
+			this.listeningAccounts = [];
+		});
+
+		return this.websocket;
 	}
 
 	subscribe(account: string) {
 		this.check();
 
-		const confirmation_subscription = {
-			action: 'subscribe',
-			topic: 'confirmation',
-			options: {
-				accounts: [account],
-			},
-		};
+		if (this.listeningAccounts.includes(account)) {
+			return;
+		}
 
-		this.ws?.send(JSON.stringify(confirmation_subscription));
+		const message =
+			this.listeningAccounts.length > 0
+				? {
+						action: 'update',
+						topic: 'confirmation',
+						options: {
+							accounts_add: [account],
+						},
+				  }
+				: {
+						action: 'subscribe',
+						topic: 'confirmation',
+						options: {
+							accounts: [account],
+						},
+				  };
+
+		if (this.websocket) {
+			this.websocket.send(JSON.stringify(message));
+			this.listeningAccounts.push(account);
+		} else {
+			throw new Error('WebSocket is not initialized');
+		}
 	}
 
 	unsubscribe(account: string) {
 		this.check();
 
-		const confirmation_subscription = {
-			action: 'unsubscribe',
-			topic: 'confirmation',
-			options: {
-				accounts: [account],
-			},
-		};
+		if (!this.listeningAccounts.includes(account)) {
+			return;
+		}
 
-		this.ws?.send(JSON.stringify(confirmation_subscription));
+		const message =
+			this.listeningAccounts.length > 1
+				? {
+						action: 'update',
+						topic: 'confirmation',
+						options: {
+							accounts_del: [account],
+						},
+				  }
+				: {
+						action: 'unsubscribe',
+						topic: 'confirmation',
+				  };
+
+		if (this.websocket) {
+			this.websocket.send(JSON.stringify(message));
+			this.listeningAccounts = this.listeningAccounts.filter((acc) => acc !== account);
+		} else {
+			throw new Error('WebSocket is not initialized');
+		}
 	}
 
 	onError(handler: EventListenerOrEventListenerObject<ErrorEvent>) {
 		this.check();
-		this.ws?.addEventListener('error', handler);
+		this.websocket?.addEventListener('error', handler);
 	}
 
 	onClose(handler: EventListenerOrEventListenerObject<CloseEvent>) {
 		this.check();
-		this.ws?.addEventListener('close', handler);
+		this.websocket?.addEventListener('close', handler);
 	}
 
 	onPayment(handler: (data: SendEvent) => void) {
@@ -115,11 +162,11 @@ export default class NanoWebsocket {
 	close() {
 		this.check();
 		this.closedByClient = true;
-		this.ws?.close();
+		this.websocket?.close();
 	}
 
 	check() {
-		if (!this.ws) {
+		if (!this.websocket) {
 			throw new Error('WebSocket is not initialized');
 		}
 	}
