@@ -13,8 +13,8 @@ export default class NanoWebsocket {
 	websocketUrl: string;
 	private websocket: WebSocket | null = null;
 	private listeners: ((data: SendEvent) => void)[] = [];
+	private closedByClient = false;
 	listeningAccounts: string[] = [];
-	closedByClient = false;
 
 	constructor(websocketUrl: string) {
 		// Using HTTP instead WS to work with fetch
@@ -73,12 +73,12 @@ export default class NanoWebsocket {
 
 		// on error clear accounts
 		this.websocket.addEventListener('error', () => {
-			this.listeningAccounts = [];
+			this.reset();
 		});
 
 		// on close clear accounts
 		this.websocket.addEventListener('close', () => {
-			this.listeningAccounts = [];
+			this.reset();
 		});
 
 		return this.websocket;
@@ -117,7 +117,7 @@ export default class NanoWebsocket {
 	}
 
 	unsubscribe(account: string) {
-		this.check();
+		if (!this.websocket) return;
 
 		if (!this.listeningAccounts.includes(account)) {
 			return;
@@ -150,9 +150,11 @@ export default class NanoWebsocket {
 		this.websocket?.addEventListener('error', handler);
 	}
 
-	onClose(handler: EventListenerOrEventListenerObject<CloseEvent>) {
+	onClose(handler: (event: CloseEvent, closedByClient: boolean) => void) {
 		this.check();
-		this.websocket?.addEventListener('close', handler);
+		this.websocket?.addEventListener('close', (event) => {
+			handler(event, this.closedByClient);
+		});
 	}
 
 	onPayment(handler: (data: SendEvent) => void) {
@@ -160,14 +162,22 @@ export default class NanoWebsocket {
 	}
 
 	close() {
-		this.check();
+		if (!this.websocket) return;
 		this.closedByClient = true;
-		this.websocket?.close();
+		this.websocket.close();
 	}
 
-	check() {
+	private check() {
 		if (!this.websocket) {
 			throw new Error('WebSocket is not initialized');
 		}
+	}
+
+	private reset() {
+		setTimeout(() => {
+			this.websocket = null;
+			this.listeningAccounts = [];
+			this.closedByClient = false;
+		}, 50);
 	}
 }
