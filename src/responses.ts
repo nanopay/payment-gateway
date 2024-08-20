@@ -1,7 +1,7 @@
 export async function UnauthorizedException() {
 	return new Response(
 		JSON.stringify({
-			reason: 'Unauthorized',
+			message: 'Unauthorized',
 		}),
 		{
 			status: 401,
@@ -9,14 +9,14 @@ export async function UnauthorizedException() {
 			headers: {
 				'Content-Type': 'application/json',
 			},
-		},
+		}
 	);
 }
 
 export async function NotFoundException() {
 	return new Response(
 		JSON.stringify({
-			reason: 'Not Found',
+			message: 'Not Found',
 		}),
 		{
 			status: 404,
@@ -24,14 +24,14 @@ export async function NotFoundException() {
 			headers: {
 				'Content-Type': 'application/json',
 			},
-		},
+		}
 	);
 }
 
-export async function BadRequestException(reason: string) {
+export async function BadRequestException(message: string) {
 	return new Response(
 		JSON.stringify({
-			reason,
+			message,
 		}),
 		{
 			status: 400,
@@ -39,14 +39,14 @@ export async function BadRequestException(reason: string) {
 			headers: {
 				'Content-Type': 'application/json',
 			},
-		},
+		}
 	);
 }
 
-export async function ServerException(reason: string) {
+export async function ServerException(message: string) {
 	return new Response(
 		JSON.stringify({
-			reason,
+			message,
 		}),
 		{
 			status: 500,
@@ -54,7 +54,7 @@ export async function ServerException(reason: string) {
 			headers: {
 				'Content-Type': 'application/json',
 			},
-		},
+		}
 	);
 }
 
