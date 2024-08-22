@@ -1,5 +1,5 @@
 {
-	"name": "payment-gateway",
+	"name": "nanopay-gateway",
 	"version": "0.0.0",
 	"author": "anarkrypto",
 	"private": true,
