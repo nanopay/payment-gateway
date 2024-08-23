@@ -8,7 +8,7 @@ import { isFalsyLike } from './utils';
 /*
  * Export our Durable Object classes here.
  */
-export { PaymentListenerDurable } from './durable/payment-listener-durable';
+export { PaymentListener } from './durable/payment-listener';
 
 /*
  * This is the main entry point for your Worker.

@@ -5,7 +5,7 @@ import { rawToNano } from '../utils';
 import { logger } from '../logger';
 import { INVOICE_MIN_AMOUNT } from '../constants';
 
-export class PaymentListenerDurable extends DurableObject<Env> {
+export class PaymentListener extends DurableObject<Env> {
 	private nanoWebsocket: NanoWebsocket;
 	private pendingInvoices: { id: string; expiresAt: string; payAddress: string; payments: Payment[] }[] = [];
 

@@ -88,10 +88,12 @@ logpush = true
 
 [[durable_objects.bindings]]
 name = "PAYMENT_LISTENER_DURABLE"
-class_name = "PaymentListenerDurable"
+class_name = "PaymentListener"
 
-# Durable Object migrations.
-# Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#migrations
 [[migrations]]
 tag = "v1"
 new_classes = ["PaymentListenerDurable"]
+
+[[migrations]]
+tag = "v2"
+renamed_classes = [{from = "PaymentListenerDurable", to = "PaymentListener" }]

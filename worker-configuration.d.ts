@@ -15,7 +15,7 @@ interface Env {
 	RPC_URLS: string;
 	WORKER_URLS: string;
 	IS_LOCAL_MODE: string;
-	PAYMENT_LISTENER_DURABLE: DurableObjectNamespace<import("./src/index").PaymentListenerDurable>;
+	PAYMENT_LISTENER_DURABLE: DurableObjectNamespace<import('./src/index').PaymentListener>;
 	PAYMENT_LISTENER_QUEUE: Queue;
 	PAYMENT_RECEIVER_QUEUE: Queue;
 	PAYMENT_WRITE_QUEUE: Queue;
