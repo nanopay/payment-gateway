@@ -63,5 +63,5 @@ export const generateInvoiceId = (): string => {
 };
 
 export const isFalsyLike = (value: unknown): boolean => {
-	return value === false || value === 'false' || value === 0 || value === '0' || value === undefined || value === null;
+	return value === false || value === 'false' || value === 0 || value === '0' || value === undefined || value === null || value === '';
 };
