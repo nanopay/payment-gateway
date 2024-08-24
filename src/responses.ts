@@ -43,6 +43,21 @@ export async function BadRequestException(message: string) {
 	);
 }
 
+export async function MethodNotAllowedException() {
+	return new Response(
+		JSON.stringify({
+			message: 'Method Not Allowed',
+		}),
+		{
+			status: 405,
+			statusText: 'Method Not Allowed',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		}
+	);
+}
+
 export async function ServerException(message: string) {
 	return new Response(
 		JSON.stringify({
