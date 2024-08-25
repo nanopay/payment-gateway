@@ -1,9 +1,11 @@
 import { match } from 'path-to-regexp';
 import { MethodNotAllowedException, NotFoundException } from '../responses';
 
+type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+
 type Route<Path extends string, Env = unknown, CfHostMetadata = unknown> = {
 	path: Path;
-	method: string;
+	method: HTTPMethod;
 	handler: RouteHandler<Path, Env, CfHostMetadata>;
 };
 
@@ -26,10 +28,17 @@ type RouteHandler<Path extends string, Env = unknown, CfHostMetadata = unknown> 
 }) => Response | Promise<Response>;
 
 export class Router<Env = unknown, CfHostMetadata = unknown> {
-	private routes: Route<string, Env, CfHostMetadata>[] = [];
+	routes: Route<string, Env, CfHostMetadata>[] = [];
 
-	private addRoute<Path extends string>(path: Path, method: string, handler: RouteHandler<Path, Env>) {
-		this.routes.push({ path, method, handler });
+	private sanitizePath(path: string): string {
+		return path
+			.replace(/^\/?/, '/') // Ensure starts with /
+			.replace(/\/+$/, '') // Remove / from the end
+			.replace(/\/{2,}/g, '/'); // Replace double // with /
+	}
+
+	private addRoute<Path extends string>(path: Path, method: HTTPMethod, handler: RouteHandler<Path, Env, CfHostMetadata>) {
+		this.routes.push({ path: this.sanitizePath(path), method, handler });
 	}
 
 	public get<Path extends string>(path: Path, handler: RouteHandler<Path, Env>) {
