@@ -49,6 +49,12 @@ export class Router<Env = unknown, CfHostMetadata = unknown> {
 		this.addRoute(path, 'POST', handler);
 	}
 
+	public route(path: string, router: Router<Env, CfHostMetadata>): void {
+		router.routes.forEach((route) => {
+			this.addRoute(`${path}${this.sanitizePath(route.path)}`, route.method, route.handler);
+		});
+	}
+
 	public fetch: ExportedHandlerFetchHandler<Env, CfHostMetadata> = async (req, env, ctx) => {
 		const { pathname } = new URL(req.url);
 
