@@ -8,6 +8,7 @@ import { Router } from './utils/router';
  * Export our Durable Object classes here.
  */
 export { PaymentListener } from './durable/payment-listener';
+export { PaymentNotifier } from './durable/payment-notifier';
 
 /*
  * Our API router.

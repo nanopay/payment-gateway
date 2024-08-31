@@ -90,6 +90,10 @@ logpush = true
 name = "PAYMENT_LISTENER_DURABLE"
 class_name = "PaymentListener"
 
+[[durable_objects.bindings]]
+name = "PAYMENT_NOTIFIER"
+class_name = "PaymentNotifier"
+
 [[migrations]]
 tag = "v1"
 new_classes = ["PaymentListenerDurable"]
@@ -97,3 +101,7 @@ new_classes = ["PaymentListenerDurable"]
 [[migrations]]
 tag = "v2"
 renamed_classes = [{from = "PaymentListenerDurable", to = "PaymentListener" }]
+
+[[migrations]]
+tag = "v3"
+new_classes = ["PaymentNotifier"]
