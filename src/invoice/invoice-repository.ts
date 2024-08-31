@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Database, Invoice, Service, Webhook } from '../types';
-import { logger } from '../logger';
 import { NotFoundException, ServerException } from '../responses';
 import { invoiceCreateSchema, invoiceUpdateSchema } from './invoices-schema';
 import { generateInvoiceId } from '../utils';
@@ -95,7 +94,6 @@ export class InvoiceSupabaseRepository implements InvoiceRepository {
 			.single();
 
 		if (error) {
-			logger.error('Supabase error', error);
 			throw new Error(error.message);
 		}
 
