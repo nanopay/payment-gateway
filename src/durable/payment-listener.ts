@@ -4,10 +4,12 @@ import { Invoice, MessageBody, Payment, Service, Webhook } from '../types';
 import { rawToNano } from '../utils';
 import { logger } from '../logger';
 import { INVOICE_MIN_AMOUNT } from '../constants';
+import { PaymentNotifier } from './payment-notifier';
 
 export class PaymentListener extends DurableObject<Env> {
 	private nanoWebsocket: NanoWebsocket;
 	private pendingInvoices: { id: string; expiresAt: string; payAddress: string; payments: Payment[] }[] = [];
+	private notifierNamespace: DurableObjectNamespace<PaymentNotifier>;
 
 	/**
 	 * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
@@ -19,6 +21,7 @@ export class PaymentListener extends DurableObject<Env> {
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
 		this.nanoWebsocket = new NanoWebsocket(env.NANO_WEBSOCKET_URL);
+		this.notifierNamespace = env.PAYMENT_NOTIFIER;
 	}
 
 	async listen(message: MessageBody) {
@@ -57,6 +60,8 @@ export class PaymentListener extends DurableObject<Env> {
 			payAddress: invoice.pay_address,
 			payments: [],
 		});
+
+		await this.startPaymentNotifier(invoice.id);
 
 		await this.alarm();
 	}
@@ -101,7 +106,7 @@ export class PaymentListener extends DurableObject<Env> {
 
 		payments.push(newPayment);
 
-		this.paymentNotify(payments, invoice);
+		this.paymentNotify(newPayment, invoice.id);
 		this.paymentWrite(newPayment, invoice, service, webhooks);
 
 		const paid_total = payments.reduce((acc, payment) => {
@@ -109,15 +114,15 @@ export class PaymentListener extends DurableObject<Env> {
 		}, 0);
 
 		if (paid_total >= invoice.price) {
-			this.nanoWebsocket.unsubscribe(invoice.pay_address);
-			this.removePendingInvoice(invoice.id);
-
-			this.paymentReceiver(payments, invoice);
+			await this.removePendingInvoice(invoice.id, invoice.pay_address);
+			await this.paymentReceiver(payments, invoice);
 		}
 	}
 
-	private removePendingInvoice(invoiceId: string) {
+	private async removePendingInvoice(invoiceId: string, payAddress: string) {
+		this.nanoWebsocket.unsubscribe(payAddress);
 		this.pendingInvoices = this.pendingInvoices.filter((activeInvoice) => activeInvoice.id !== invoiceId);
+		await this.stopPaymentNotifier(invoiceId);
 	}
 
 	private async paymentWrite(payment: Payment, invoice: Invoice, service: Service, webhooks: Webhook[]) {
@@ -130,11 +135,28 @@ export class PaymentListener extends DurableObject<Env> {
 		});
 	}
 
-	private async paymentNotify(payments: Payment[], invoice: Invoice) {
-		// Send the payment to the worker to push to the channel
-		await this.env.PAYMENT_PUSHER_QUEUE.send({
-			invoice,
-			payments,
+	private async startPaymentNotifier(invoiceId: string) {
+		const notifierId = this.notifierNamespace.idFromName(invoiceId);
+		const paymentNotifier = this.notifierNamespace.get(notifierId);
+		await paymentNotifier.start();
+	}
+
+	private async stopPaymentNotifier(invoiceId: string) {
+		const notifierId = this.notifierNamespace.idFromName(invoiceId);
+		const paymentNotifier = this.notifierNamespace.get(notifierId);
+		await paymentNotifier.stop();
+	}
+
+	private async paymentNotify(payment: Payment, invoiceId: string) {
+		// Send the payment to the PaymentNotifier
+		const notifierId = this.notifierNamespace.idFromName(invoiceId);
+		const paymentNotifier = this.notifierNamespace.get(notifierId);
+		await paymentNotifier.notify({
+			from: payment.from,
+			to: payment.to,
+			amount: payment.amount_raws,
+			hash: payment.hash,
+			timestamp: payment.timestamp,
 		});
 	}
 
@@ -156,8 +178,7 @@ export class PaymentListener extends DurableObject<Env> {
 				logger.info(`Invoice expired: ${activeInvoice.id}`, {
 					activeInvoice,
 				});
-				this.nanoWebsocket.unsubscribe(activeInvoice.payAddress);
-				this.removePendingInvoice(activeInvoice.id);
+				await this.removePendingInvoice(activeInvoice.id, activeInvoice.payAddress);
 			}
 		}
 		if (this.pendingInvoices.length > 0) {
