@@ -36,7 +36,6 @@ npm install
 ```bash
 wrangler queues create payment-listener-queue
 wrangler queues create payment-write-queue
-wrangler queues create payment-pusher-queue
 wrangler queues create payment-receiver-queue
 wrangler queues create payment-sender-queue
 wrangler queues create webhook-delivery-queue
@@ -73,11 +72,6 @@ wrangler secret put RPC_URL
 
 # A Nano node worker RPC url with PoW generation support (can be the same as RPC_URL)
 wrangler secret put WORKER_URLS
-
-# Your Pusher crendentials
-wrangler secret put PUSHER_APP_ID
-wrangler secret put PUSHER_KEY
-wrangler secret put PUSHER_SECRET
 ```
 
 ## Running locally

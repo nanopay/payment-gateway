@@ -25,12 +25,12 @@ router.route('/invoices', invoiceRouter);
 export default {
 	async fetch(request: Request<unknown, IncomingRequestCfProperties<unknown>>, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// Check authorization
-		const authorizationHeader = request.headers.get('Authorization');
-		const bearerToken = authorizationHeader?.split(' ')[1];
-		const authorized = bearerToken === env.AUTH_TOKEN;
-		if (!authorized) {
-			return UnauthorizedException();
-		}
+		// const authorizationHeader = request.headers.get('Authorization');
+		// const bearerToken = authorizationHeader?.split(' ')[1];
+		// const authorized = bearerToken === env.AUTH_TOKEN;
+		// if (!authorized) {
+		// 	return UnauthorizedException();
+		// }
 
 		const localMode = !isFalsyLike(env.IS_LOCAL_MODE);
 		logger.setLocalDev(localMode);

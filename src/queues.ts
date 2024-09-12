@@ -2,7 +2,6 @@ import { MessageBody } from './types';
 import { paymentWrite } from './workers/payment-write';
 import { paymentReceiver } from './workers/payment-receiver';
 import { paymentSender } from './workers/payment-sender';
-import { paymentPusher } from './workers/payment-pusher';
 import { webhookDelivery } from './workers/webhook-delivery';
 import { webhookDeliveryWrite } from './workers/webhook-delivery-write';
 import { logger } from './logger';
@@ -36,10 +35,6 @@ export const queue = async (batch: MessageBatch<MessageBody>, env: Env, ctx: Exe
 
 			case 'payment-sender-queue':
 				await paymentSender(message, env);
-				break;
-
-			case 'payment-pusher-queue':
-				await paymentPusher(message, env);
 				break;
 
 			case 'webhook-delivery-queue':

@@ -38,17 +38,6 @@ logpush = true
  dead_letter_queue = "payment-write-queue-dead"
 
 [[queues.producers]]
-  queue = "payment-pusher-queue"
-  binding = "PAYMENT_PUSHER_QUEUE"
-
-[[queues.consumers]]
- queue = "payment-pusher-queue"
- max_batch_size = 1
- max_batch_timeout = 5 # seconds
- max_retries = 3
- dead_letter_queue = "payment-pusher-queue-dead"
-
-[[queues.producers]]
   queue = "payment-sender-queue"
   binding = "PAYMENT_SENDER_QUEUE"
 
