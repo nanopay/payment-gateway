@@ -1,12 +1,14 @@
 import { DurableObject } from 'cloudflare:workers';
 import { SendEvent } from '../nano/websocket';
+import { logger } from '../logger';
 
 type Payment = SendEvent;
 
 /*
  * PaymentNotifier implements a Durable Object that coordinates notifications for an individual invoice.
  * Participants connect to the notifier using WebSockets, and the notifier broadcasts the payments for them.
- * The notifier is created by the PaymentListener when a new invoice is created.
+ * The notifier only start to respond websockets connections after started.
+ * It auto hibernates when no messages are being sent and resume when notify is called.
  */
 export class PaymentNotifier extends DurableObject<Env> {
 	sessions = new Set<WebSocket>();
@@ -30,6 +32,11 @@ export class PaymentNotifier extends DurableObject<Env> {
 			return new Response('expected websocket', { status: 400 });
 		}
 
+		const started = await this.storage.get('started');
+		if (started !== 'true') {
+			return new Response('not started', { status: 503 });
+		}
+
 		// To accept the WebSocket request, we create a WebSocketPair
 		const pair = new WebSocketPair();
 
@@ -38,6 +45,24 @@ export class PaymentNotifier extends DurableObject<Env> {
 
 		// Now we return the other end of the pair to the client.
 		return new Response(null, { status: 101, webSocket: pair[0] });
+	}
+
+	async start() {
+		await this.storage.put('started', 'true');
+		logger.debug('Started payment notifier');
+	}
+
+	async stop() {
+		this.sessions.forEach((session) => {
+			session.close();
+		});
+		await this.clear();
+		logger.debug('Stopped payment notifier');
+	}
+
+	private async clear() {
+		this.sessions.clear();
+		await this.storage.deleteAll();
 	}
 
 	private async handleSession(webSocket: WebSocket) {
@@ -74,7 +99,7 @@ export class PaymentNotifier extends DurableObject<Env> {
 	}
 
 	// Broadcasts a payment to all clients.
-	private broadcast(payment: Payment) {
+	private async broadcast(payment: Payment) {
 		// Iterate over all the sessions sending them messages.
 		this.sessions.forEach((session) => {
 			try {
