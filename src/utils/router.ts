@@ -1,23 +1,23 @@
 import { match } from 'path-to-regexp';
 import { MethodNotAllowedException, NotFoundException, ServerException } from '../responses';
 
-type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
 
-type Route<Path extends string, Env = unknown, CfHostMetadata = unknown> = {
+export type Route<Path extends string, Env = unknown, CfHostMetadata = unknown> = {
 	path: Path;
 	method: HTTPMethod;
 	handlers: RouteHandler<Path, Env, CfHostMetadata>[];
 };
 
-type ExtractRouteParams<T extends string> = T extends `${infer _Start}:${infer Param}/${infer Rest}`
+export type ExtractRouteParams<T extends string> = T extends `${infer _Start}:${infer Param}/${infer Rest}`
 	? { [K in Param | keyof ExtractRouteParams<`/${Rest}`>]: string }
 	: T extends `${infer _Start}:${infer Param}`
 	? { [K in Param]: string }
 	: {};
 
-type Next = () => Response | Promise<Response>;
+export type Next = () => Response | Promise<Response>;
 
-type RouteHandler<Path extends string, Env = unknown, CfHostMetadata = unknown> = ({
+export type RouteHandler<Path extends string, Env = unknown, CfHostMetadata = unknown> = ({
 	req,
 	params,
 	env,
