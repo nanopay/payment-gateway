@@ -1,12 +1,12 @@
 import { match } from 'path-to-regexp';
-import { MethodNotAllowedException, NotFoundException } from '../responses';
+import { MethodNotAllowedException, NotFoundException, ServerException } from '../responses';
 
 type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
 
 type Route<Path extends string, Env = unknown, CfHostMetadata = unknown> = {
 	path: Path;
 	method: HTTPMethod;
-	handler: RouteHandler<Path, Env, CfHostMetadata>;
+	handlers: RouteHandler<Path, Env, CfHostMetadata>[];
 };
 
 type ExtractRouteParams<T extends string> = T extends `${infer _Start}:${infer Param}/${infer Rest}`
@@ -15,16 +15,20 @@ type ExtractRouteParams<T extends string> = T extends `${infer _Start}:${infer P
 	? { [K in Param]: string }
 	: {};
 
+type Next = () => Response | Promise<Response>;
+
 type RouteHandler<Path extends string, Env = unknown, CfHostMetadata = unknown> = ({
 	req,
 	params,
 	env,
 	ctx,
+	next,
 }: {
 	req: Request<CfHostMetadata, IncomingRequestCfProperties<CfHostMetadata>>;
 	params: ExtractRouteParams<Path>;
 	env: Env;
 	ctx: ExecutionContext;
+	next: Next;
 }) => Response | Promise<Response>;
 
 export class Router<Env = unknown, CfHostMetadata = unknown> {
@@ -37,21 +41,27 @@ export class Router<Env = unknown, CfHostMetadata = unknown> {
 			.replace(/\/{2,}/g, '/'); // Replace double // with /
 	}
 
-	private addRoute<Path extends string>(path: Path, method: HTTPMethod, handler: RouteHandler<Path, Env, CfHostMetadata>) {
-		this.routes.push({ path: this.sanitizePath(path), method, handler });
+	private addRoute<Path extends string>(path: Path, method: HTTPMethod, ...handlers: RouteHandler<Path, Env, CfHostMetadata>[]) {
+		this.routes.push({ path: this.sanitizePath(path), method, handlers });
 	}
 
-	public get<Path extends string>(path: Path, handler: RouteHandler<Path, Env>) {
-		this.addRoute(path, 'GET', handler);
+	public get<Path extends string, H extends RouteHandler<Path, Env>[]>(
+		path: Path,
+		...handlers: H & { [K in keyof H]: RouteHandler<Path, Env> }
+	) {
+		this.addRoute(path, 'GET', ...handlers);
 	}
 
-	public post<Path extends string>(path: Path, handler: RouteHandler<Path, Env>) {
-		this.addRoute(path, 'POST', handler);
+	public post<Path extends string, H extends RouteHandler<Path, Env>[]>(
+		path: Path,
+		...handlers: H & { [K in keyof H]: RouteHandler<Path, Env> }
+	) {
+		this.addRoute(path, 'POST', ...handlers);
 	}
 
 	public route(path: string, router: Router<Env, CfHostMetadata>): void {
 		router.routes.forEach((route) => {
-			this.addRoute(`${path}${this.sanitizePath(route.path)}`, route.method, route.handler);
+			this.addRoute(`${path}${this.sanitizePath(route.path)}`, route.method, ...route.handlers);
 		});
 	}
 
@@ -76,11 +86,16 @@ export class Router<Env = unknown, CfHostMetadata = unknown> {
 			return pathExists ? MethodNotAllowedException() : NotFoundException();
 		}
 
-		return await route.handler({
-			req,
-			params,
-			env,
-			ctx,
-		});
+		// Run handlers (middlewares and final handler) in sequence
+		let index = 0;
+		const next = async (): Promise<Response> => {
+			if (index < route.handlers.length) {
+				const handler = route.handlers[index++];
+				return await handler({ req, params, env, ctx, next });
+			}
+			return ServerException('No response returned');
+		};
+
+		return await next();
 	};
 }
