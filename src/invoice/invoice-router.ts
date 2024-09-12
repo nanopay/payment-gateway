@@ -19,11 +19,4 @@ router.get('/:id/payments', ({ req, env, params }) => {
 	return paymentNotifier.fetch(req.url, req);
 });
 
-router.post('/:id/payments', async ({ env, params }) => {
-	const notifierId = env.PAYMENT_NOTIFIER.idFromName(params.id);
-	const paymentNotifier = env.PAYMENT_NOTIFIER.get(notifierId);
-	await paymentNotifier.produceFakePayment();
-	return new Response('OK', { status: 200 });
-});
-
 export const invoiceRouter = router;
