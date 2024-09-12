@@ -71,7 +71,9 @@ export class Logger {
 	}
 
 	debug(msg: string, data?: Record<string, unknown>) {
-		this._log(msg, 'debug', data);
+		if (this.isLocalDev) {
+			this._log(msg, 'debug', data);
+		}
 	}
 
 	setLocalDev(isLocalDev: boolean) {
