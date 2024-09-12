@@ -1,14 +1,15 @@
+import { authMiddleware } from '../middlewares/authMiddleware';
 import { Router } from '../utils/router';
 import { InvoiceService } from './invoice-service';
 
 const router = new Router<Env>();
 
-router.get('/:id', ({ env, params }) => {
+router.get('/:id', authMiddleware, ({ env, params }) => {
 	const invoices = new InvoiceService(env);
 	return invoices.getById(params.id);
 });
 
-router.post('/', async ({ req, env }) => {
+router.post('/', authMiddleware, async ({ req, env }) => {
 	const invoices = new InvoiceService(env);
 	return invoices.create(await req.json());
 });
