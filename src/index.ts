@@ -1,13 +1,13 @@
 import { invoiceRouter } from './invoice/invoice-router';
 import { logger } from './logger';
 import { queue } from './queues';
-import { UnauthorizedException } from './responses';
 import { isFalsyLike } from './utils';
 import { Router } from './utils/router';
 /*
  * Export our Durable Object classes here.
  */
 export { PaymentListener } from './durable/payment-listener';
+export { PaymentNotifier } from './durable/payment-notifier';
 
 /*
  * Our API router.
@@ -23,14 +23,6 @@ router.route('/invoices', invoiceRouter);
  */
 export default {
 	async fetch(request: Request<unknown, IncomingRequestCfProperties<unknown>>, env: Env, ctx: ExecutionContext): Promise<Response> {
-		// Check authorization
-		const authorizationHeader = request.headers.get('Authorization');
-		const bearerToken = authorizationHeader?.split(' ')[1];
-		const authorized = bearerToken === env.AUTH_TOKEN;
-		if (!authorized) {
-			return UnauthorizedException();
-		}
-
 		const localMode = !isFalsyLike(env.IS_LOCAL_MODE);
 		logger.setLocalDev(localMode);
 
