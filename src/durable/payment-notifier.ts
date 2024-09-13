@@ -79,10 +79,8 @@ export class PaymentNotifier extends DurableObject<Env> {
 
 		// Load the last 10 payments from the history stored on disk, and send them to the
 		// client.
-		let storage = await this.storage.list<Record<any, any>>({ reverse: true, limit: 10 });
-		let backlog = [...storage.values()];
-		backlog.reverse();
-		backlog.forEach((value) => {
+		const payments = await this.storage.list<Record<any, any>>({ reverse: true, limit: 10, prefix: 'payment_' });
+		[...payments.values()].forEach((value) => {
 			webSocket.send(JSON.stringify(value));
 		});
 	}
@@ -118,7 +116,7 @@ export class PaymentNotifier extends DurableObject<Env> {
 
 	public async notify(payment: PaymentNotification) {
 		// Store the payment in the history.
-		await this.storage.put(payment.hash, payment);
+		await this.storage.put(`payment_${payment.hash}`, payment);
 
 		// Broadcast the payment to all clients.
 		this.broadcast(payment);
