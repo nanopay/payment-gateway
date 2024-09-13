@@ -154,7 +154,7 @@ export class PaymentListener extends DurableObject<Env> {
 		await paymentNotifier.notify({
 			from: payment.from,
 			to: payment.to,
-			amount: payment.amount_raws,
+			amount: payment.amount,
 			hash: payment.hash,
 			timestamp: payment.timestamp,
 		});

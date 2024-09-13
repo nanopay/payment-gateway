@@ -1,8 +1,13 @@
 import { DurableObject } from 'cloudflare:workers';
-import { SendEvent } from '../nano/websocket';
 import { logger } from '../logger';
 
-type Payment = SendEvent;
+export type PaymentNotification = {
+	from: string;
+	to: string;
+	amount: number;
+	hash: string;
+	timestamp: number;
+};
 
 /*
  * PaymentNotifier implements a Durable Object that coordinates notifications for an individual invoice.
@@ -99,7 +104,7 @@ export class PaymentNotifier extends DurableObject<Env> {
 	}
 
 	// Broadcasts a payment to all clients.
-	private async broadcast(payment: Payment) {
+	private async broadcast(payment: PaymentNotification) {
 		// Iterate over all the sessions sending them messages.
 		this.sessions.forEach((session) => {
 			try {
@@ -111,7 +116,7 @@ export class PaymentNotifier extends DurableObject<Env> {
 		});
 	}
 
-	public async notify(payment: Payment) {
+	public async notify(payment: PaymentNotification) {
 		// Store the payment in the history.
 		await this.storage.put(payment.hash, payment);
 
