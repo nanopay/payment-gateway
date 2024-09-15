@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 import { WEBHOOK_RETRY, WEBHOOK_DELIVERY_TIMEOUT } from '../constants';
 import { MessageBody } from '../types';
 import { fetchWithTimeout, getHeaders } from '../utils';
-import { sign } from '../utils/sign';
+import { createHmacSignature } from '../utils/hmac';
 import { logger } from '../logger';
 
 export const webhookDelivery = async (message: MessageBody, env: Env) => {
@@ -39,7 +39,7 @@ export const webhookDelivery = async (message: MessageBody, env: Env) => {
 		};
 
 		if (webhook.secret) {
-			const signature = await sign(JSON.stringify(requestBody), webhook.secret);
+			const signature = await createHmacSignature(JSON.stringify(requestBody), webhook.secret);
 			requestHeaders['X-Signature'] = signature;
 		}
 

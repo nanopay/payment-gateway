@@ -2,7 +2,7 @@
  * Use Web Crypto API to create HMAC-SHA256 signature
  * Returns the signature as a hex string
  */
-export const sign = async (data: string, secret: string) => {
+export const createHmacSignature = async (data: string, secret: string) => {
 	const algorithm = { name: 'HMAC', hash: 'SHA-256' };
 
 	const enc = new TextEncoder();
