@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { logger } from '../logger';
+import { MAX_WEBSOCKET_SESSIONS_PER_PAYMENT_NOTIFIER } from '../constants';
 
 export type PaymentNotification = {
 	from: string;
@@ -40,6 +41,10 @@ export class PaymentNotifier extends DurableObject<Env> {
 		const started = await this.storage.get('started');
 		if (started !== 'true') {
 			return new Response('not started', { status: 503 });
+		}
+
+		if (this.sessions.size >= MAX_WEBSOCKET_SESSIONS_PER_PAYMENT_NOTIFIER) {
+			return new Response('too many sessions', { status: 503 });
 		}
 
 		// To accept the WebSocket request, we create a WebSocketPair
