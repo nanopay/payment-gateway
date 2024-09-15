@@ -3,7 +3,7 @@ import NanoWebsocket, { SendEvent } from '../nano/websocket';
 import { Invoice, MessageBody, Payment, Service, Webhook } from '../types';
 import { rawToNano } from '../utils';
 import { logger } from '../logger';
-import { INVOICE_MIN_AMOUNT } from '../constants';
+import { INVOICE_MIN_AMOUNT, MAX_PAYMENTS_PER_INVOICE } from '../constants';
 import { PaymentNotifier } from './payment-notifier';
 
 export class PaymentListener extends DurableObject<Env> {
@@ -116,6 +116,12 @@ export class PaymentListener extends DurableObject<Env> {
 		if (paid_total >= invoice.price) {
 			await this.removePendingInvoice(invoice.id, invoice.pay_address);
 			await this.paymentReceiver(payments, invoice);
+		} else if (payments.length >= MAX_PAYMENTS_PER_INVOICE) {
+			await this.removePendingInvoice(invoice.id, invoice.pay_address);
+			logger.warn(`Max payments reached for invoice: ${invoice.id}`, {
+				invoice,
+				payments,
+			});
 		}
 	}
 

@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { logger } from '../logger';
-import { MAX_WEBSOCKET_SESSIONS_PER_PAYMENT_NOTIFIER } from '../constants';
+import { MAX_PAYMENTS_PER_INVOICE, MAX_WEBSOCKET_SESSIONS_PER_PAYMENT_NOTIFIER } from '../constants';
 
 export type PaymentNotification = {
 	from: string;
@@ -84,7 +84,7 @@ export class PaymentNotifier extends DurableObject<Env> {
 
 		// Load the last 10 payments from the history stored on disk, and send them to the
 		// client.
-		const payments = await this.storage.list<Record<any, any>>({ reverse: true, limit: 10, prefix: 'payment_' });
+		const payments = await this.storage.list<Record<any, any>>({ reverse: true, limit: MAX_PAYMENTS_PER_INVOICE, prefix: 'payment_' });
 		[...payments.values()].forEach((value) => {
 			webSocket.send(JSON.stringify(value));
 		});
