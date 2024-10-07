@@ -40,10 +40,12 @@ export class PaymentNotifier extends DurableObject<Env> {
 
 		const started = await this.storage.get('started');
 		if (started !== 'true') {
+			logger.debug('Payment notifier not started');
 			return new Response('not started', { status: 503 });
 		}
 
 		if (this.sessions.size >= MAX_WEBSOCKET_SESSIONS_PER_PAYMENT_NOTIFIER) {
+			logger.debug('Too many sessions');
 			return new Response('too many sessions', { status: 503 });
 		}
 
