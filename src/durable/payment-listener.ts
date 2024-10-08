@@ -106,8 +106,8 @@ export class PaymentListener extends DurableObject<Env> {
 
 		payments.push(newPayment);
 
-		this.paymentNotify(newPayment, invoice.id);
-		this.paymentWrite(newPayment, invoice, service, webhooks);
+		await this.paymentNotify(newPayment, invoice.id);
+		await this.paymentWrite(newPayment, invoice, service, webhooks);
 
 		const paid_total = payments.reduce((acc, payment) => {
 			return acc + payment.amount;
@@ -133,7 +133,7 @@ export class PaymentListener extends DurableObject<Env> {
 
 	private async paymentWrite(payment: Payment, invoice: Invoice, service: Service, webhooks: Webhook[]) {
 		// Send the payment to the worker write to the db
-		this.env.PAYMENT_WRITE_QUEUE.send({
+		await this.env.PAYMENT_WRITE_QUEUE.send({
 			invoice,
 			service,
 			webhooks,
