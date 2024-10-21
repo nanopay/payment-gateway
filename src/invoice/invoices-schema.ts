@@ -11,6 +11,7 @@ export const invoiceCreateSchema = z
 		redirect_url: z.string().url().max(512).nullable().optional(),
 		service_id: z.string(),
 		expires_at: z.string(),
+		pay_address: z.string().regex(/^nano_[13456789abcdefghijkmnopqrstuwxyz]{60}$/),
 	})
 	.strict();
 

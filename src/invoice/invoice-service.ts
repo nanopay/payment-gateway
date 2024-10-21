@@ -31,7 +31,20 @@ export class InvoiceService {
 	}: z.infer<typeof invoiceCreateSchema>): Promise<Response> {
 		const expires_at = new Date(Date.now() + INVOICE_EXPIRATION).toISOString();
 
-		invoiceCreateSchema.parse({ title, description, metadata, price, recipient_address, service_id, redirect_url, expires_at });
+		invoiceCreateSchema
+			.omit({ pay_address: true })
+			.parse({ title, description, metadata, price, recipient_address, service_id, redirect_url, expires_at });
+
+		const minIndex = 1000; // Initially we used a sequential index in the first 1000 invoices, feel free to change this value
+		const maxIndex = Math.pow(2, 32) - 1; // The index value is a unsigned 32-bit integer
+		const randomIndex = Math.floor(Math.random() * (maxIndex - minIndex + 1)) + minIndex;
+
+		// Derive new pay address from HOT_WALLET
+		const secretKey = deriveSecretKey(this.env.HOT_WALLET_SEED, randomIndex);
+		const publicKey = derivePublicKey(secretKey);
+		const pay_address = deriveAddress(publicKey, {
+			useNanoPrefix: true,
+		});
 
 		const { invoice, service } = await this.repository.create({
 			title,
@@ -42,16 +55,6 @@ export class InvoiceService {
 			recipient_address,
 			service_id,
 			redirect_url,
-		});
-
-		// Derive new pay address from HOT_WALLET
-		const secretKey = deriveSecretKey(this.env.HOT_WALLET_SEED, invoice.index);
-		const publicKey = derivePublicKey(secretKey);
-		const pay_address = deriveAddress(publicKey, {
-			useNanoPrefix: true,
-		});
-
-		await this.repository.update(invoice.id, {
 			pay_address,
 		});
 
