@@ -18,6 +18,7 @@ export type PaymentNotification = {
  */
 export class PaymentNotifier extends DurableObject<Env> {
 	sessions = new Set<WebSocket>();
+	startPromises = new Set<{ promise: Promise<void>; start: () => void }>();
 	state: DurableObjectState;
 	storage: DurableObjectStorage;
 
@@ -40,8 +41,30 @@ export class PaymentNotifier extends DurableObject<Env> {
 
 		const started = await this.storage.get('started');
 		if (started !== 'true') {
-			logger.debug('Payment notifier not started');
-			return new Response('not started', { status: 503 });
+			let start = () => {};
+			const promise = new Promise<void>((resolve, reject) => {
+				const timeout = setTimeout(() => {
+					reject('Timeout');
+				}, 10000);
+				start = () => {
+					resolve();
+					clearTimeout(timeout);
+				};
+			});
+			const startPromise = { promise, start };
+			this.startPromises.add(startPromise);
+
+			return promise
+				.then(() => {
+					return new Response('started', { status: 200 });
+				})
+				.catch(() => {
+					logger.debug('Payment notifier not started');
+					return new Response('not started', { status: 503 });
+				})
+				.finally(() => {
+					this.startPromises.delete(startPromise);
+				});
 		}
 
 		if (this.sessions.size >= MAX_WEBSOCKET_SESSIONS_PER_PAYMENT_NOTIFIER) {
@@ -60,6 +83,11 @@ export class PaymentNotifier extends DurableObject<Env> {
 	}
 
 	async start() {
+		if (this.startPromises) {
+			this.startPromises.forEach((startPromise) => {
+				startPromise.start();
+			});
+		}
 		await this.storage.put('started', 'true');
 		logger.debug('Started payment notifier');
 	}

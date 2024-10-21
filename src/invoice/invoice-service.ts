@@ -73,10 +73,6 @@ export class InvoiceService {
 			webhooks: service.webhooks || [],
 		});
 
-		const notifierId = this.env.PAYMENT_NOTIFIER.idFromName(invoice.id);
-		const paymentNotifier = this.env.PAYMENT_NOTIFIER.get(notifierId);
-		await paymentNotifier.start();
-
 		return SuccessResponse({
 			id: invoice.id,
 			pay_address,
