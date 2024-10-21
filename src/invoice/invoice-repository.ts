@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Database, Invoice, Service, Webhook } from '../types';
 import { NotFoundException, ServerException } from '../responses';
-import { invoiceCreateSchema, invoiceUpdateSchema } from './invoices-schema';
+import { invoiceCreateSchema } from './invoices-schema';
 import { generateInvoiceId } from '../utils';
 
 type PublicService = Omit<Service, 'api_keys_count' | 'webhooks_count' | 'invoices_count' | 'user_id' | 'created_at'>;
@@ -14,8 +14,6 @@ export abstract class InvoiceRepository {
 		service: PublicService & { webhooks: Webhook[] };
 		invoice: Invoice;
 	}>;
-
-	abstract update(id: string, data: z.infer<typeof invoiceUpdateSchema>): Promise<void>;
 }
 
 export class InvoiceSupabaseRepository implements InvoiceRepository {
@@ -116,13 +114,5 @@ export class InvoiceSupabaseRepository implements InvoiceRepository {
 		}
 
 		return { service, invoice };
-	}
-
-	async update(id: string, data: z.infer<typeof invoiceUpdateSchema>) {
-		const { error } = await this.supabase.from('invoices').update(data).eq('id', id);
-
-		if (error) {
-			throw ServerException(error.message);
-		}
 	}
 }
