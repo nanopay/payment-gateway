@@ -14,11 +14,3 @@ export const invoiceCreateSchema = z
 		pay_address: z.string().regex(/^nano_[13456789abcdefghijkmnopqrstuwxyz]{60}$/),
 	})
 	.strict();
-
-export const invoiceUpdateSchema = z.object({
-	pay_address: z
-		.string()
-		.regex(/^nano_[13456789abcdefghijkmnopqrstuwxyz]{60}$/)
-		.nullable()
-		.optional(),
-});
