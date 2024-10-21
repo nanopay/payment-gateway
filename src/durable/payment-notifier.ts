@@ -44,7 +44,7 @@ export class PaymentNotifier extends DurableObject<Env> {
 			let start = () => {};
 			const promise = new Promise<void>((resolve, reject) => {
 				const timeout = setTimeout(() => {
-					reject('Timeout');
+					reject('timeout');
 				}, 10000);
 				start = () => {
 					resolve();
@@ -54,17 +54,14 @@ export class PaymentNotifier extends DurableObject<Env> {
 			const startPromise = { promise, start };
 			this.startPromises.add(startPromise);
 
-			return promise
-				.then(() => {
-					return new Response('started', { status: 200 });
-				})
-				.catch(() => {
-					logger.debug('Payment notifier not started');
-					return new Response('not started', { status: 503 });
-				})
-				.finally(() => {
-					this.startPromises.delete(startPromise);
-				});
+			try {
+				await promise;
+			} catch {
+				logger.debug('Timeout: Payment notifier not started');
+				return new Response('timeout', { status: 503 });
+			} finally {
+				this.startPromises.delete(startPromise);
+			}
 		}
 
 		if (this.sessions.size >= MAX_WEBSOCKET_SESSIONS_PER_PAYMENT_NOTIFIER) {
