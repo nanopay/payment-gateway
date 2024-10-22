@@ -63,7 +63,7 @@ export type Database = {
 					description?: string | null;
 					expires_at: string;
 					id: string;
-					index?: number;
+					index: number;
 					metadata?: Json | null;
 					pay_address?: string | null;
 					price: number;
@@ -99,6 +99,107 @@ export type Database = {
 						columns: ['service_id'];
 						isOneToOne: false;
 						referencedRelation: 'services';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			notifications: {
+				Row: {
+					archived: boolean;
+					created_at: string;
+					id: string;
+					notification_event_id: string;
+					read: boolean;
+					service_id: string;
+					user_id: string;
+				};
+				Insert: {
+					archived?: boolean;
+					created_at?: string;
+					id?: string;
+					notification_event_id: string;
+					read?: boolean;
+					service_id: string;
+					user_id: string;
+				};
+				Update: {
+					archived?: boolean;
+					created_at?: string;
+					id?: string;
+					notification_event_id?: string;
+					read?: boolean;
+					service_id?: string;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'notifications_notification_event_id_fkey';
+						columns: ['notification_event_id'];
+						isOneToOne: false;
+						referencedRelation: 'notifications_events';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'notifications_service_id_fkey';
+						columns: ['service_id'];
+						isOneToOne: false;
+						referencedRelation: 'services';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'notifications_user_id_fkey';
+						columns: ['user_id'];
+						isOneToOne: false;
+						referencedRelation: 'users';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			notifications_events: {
+				Row: {
+					created_at: string;
+					id: string;
+					invoice_id: string | null;
+					service_id: string;
+					type: Database['public']['Enums']['notification_type'];
+					webhook_delivery_id: string | null;
+				};
+				Insert: {
+					created_at?: string;
+					id: string;
+					invoice_id?: string | null;
+					service_id: string;
+					type: Database['public']['Enums']['notification_type'];
+					webhook_delivery_id?: string | null;
+				};
+				Update: {
+					created_at?: string;
+					id?: string;
+					invoice_id?: string | null;
+					service_id?: string;
+					type?: Database['public']['Enums']['notification_type'];
+					webhook_delivery_id?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'notifications_events_invoice_id_fkey';
+						columns: ['invoice_id'];
+						isOneToOne: false;
+						referencedRelation: 'invoices';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'notifications_events_service_id_fkey';
+						columns: ['service_id'];
+						isOneToOne: false;
+						referencedRelation: 'services';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'notifications_events_webhook_delivery_id_fkey';
+						columns: ['webhook_delivery_id'];
+						isOneToOne: false;
+						referencedRelation: 'webhooks_deliveries';
 						referencedColumns: ['id'];
 					}
 				];
@@ -262,6 +363,44 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			sponsors: {
+				Row: {
+					amount: number;
+					avatar_url: string | null;
+					created_at: string;
+					id: string;
+					invoice_id: string;
+					message: string | null;
+					name: string;
+				};
+				Insert: {
+					amount: number;
+					avatar_url?: string | null;
+					created_at?: string;
+					id?: string;
+					invoice_id: string;
+					message?: string | null;
+					name: string;
+				};
+				Update: {
+					amount?: number;
+					avatar_url?: string | null;
+					created_at?: string;
+					id?: string;
+					invoice_id?: string;
+					message?: string | null;
+					name?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'sponsors_invoice_id_fkey';
+						columns: ['invoice_id'];
+						isOneToOne: false;
+						referencedRelation: 'invoices';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 			webhooks: {
 				Row: {
 					active: boolean;
@@ -402,6 +541,7 @@ export type Database = {
 		};
 		Enums: {
 			invoice_status: 'pending' | 'paid' | 'expired' | 'error';
+			notification_type: 'INVOICE_PAID' | 'INVOICE_ERROR' | 'INVOICE_EXPIRED' | 'WEBHOOK_FAILURE';
 		};
 		CompositeTypes: {
 			[_ in never]: never;
