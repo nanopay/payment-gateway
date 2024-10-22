@@ -65,6 +65,7 @@ export class InvoiceSupabaseRepository implements InvoiceRepository {
 		redirect_url,
 		expires_at,
 		pay_address,
+		index,
 	}: z.infer<typeof invoiceCreateSchema>) {
 		invoiceCreateSchema.parse({
 			title,
@@ -76,6 +77,7 @@ export class InvoiceSupabaseRepository implements InvoiceRepository {
 			redirect_url,
 			expires_at,
 			pay_address,
+			index,
 		});
 
 		const id = generateInvoiceId();
@@ -94,6 +96,7 @@ export class InvoiceSupabaseRepository implements InvoiceRepository {
 				service_id,
 				redirect_url,
 				pay_address,
+				index,
 			})
 			.select(
 				`

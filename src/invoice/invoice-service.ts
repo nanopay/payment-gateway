@@ -32,7 +32,7 @@ export class InvoiceService {
 		const expires_at = new Date(Date.now() + INVOICE_EXPIRATION).toISOString();
 
 		invoiceCreateSchema
-			.omit({ pay_address: true })
+			.omit({ pay_address: true, index: true })
 			.parse({ title, description, metadata, price, recipient_address, service_id, redirect_url, expires_at });
 
 		const minIndex = 1000; // Initially we used a sequential index in the first 1000 invoices, feel free to change this value
@@ -56,6 +56,7 @@ export class InvoiceService {
 			service_id,
 			redirect_url,
 			pay_address,
+			index: randomIndex,
 		});
 
 		logger.info(`New Invoice Created: ${invoice.id}`, {

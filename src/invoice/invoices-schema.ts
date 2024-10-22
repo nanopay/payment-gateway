@@ -12,5 +12,9 @@ export const invoiceCreateSchema = z
 		service_id: z.string(),
 		expires_at: z.string(),
 		pay_address: z.string().regex(/^nano_[13456789abcdefghijkmnopqrstuwxyz]{60}$/),
+		index: z
+			.number()
+			.min(0)
+			.max(Math.pow(2, 32) - 1),
 	})
 	.strict();
