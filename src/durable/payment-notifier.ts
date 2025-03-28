@@ -10,6 +10,14 @@ export type PaymentNotification = {
 	timestamp: number;
 };
 
+export const PAYMENT_NOTIFIER_CLOSE_REASON_CODE = {
+	PAID: 1000, // Normal closure: Payment completed
+	EXPIRED: 4001, // Custom: Payment expired
+	TOO_MANY_PAYMENTS: 4002, // Custom: Too many payment attempts
+};
+
+export type PaymentNotifierCloseReason = keyof typeof PAYMENT_NOTIFIER_CLOSE_REASON_CODE;
+
 /*
  * PaymentNotifier implements a Durable Object that coordinates notifications for an individual invoice.
  * Participants connect to the notifier using WebSockets, and the notifier broadcasts the payments for them.
@@ -89,9 +97,10 @@ export class PaymentNotifier extends DurableObject<Env> {
 		logger.debug('Started payment notifier');
 	}
 
-	async stop() {
+	async stop(reason: PaymentNotifierCloseReason) {
+		const code = PAYMENT_NOTIFIER_CLOSE_REASON_CODE[reason];
 		this.sessions.forEach((session) => {
-			session.close();
+			session.close(code, reason);
 		});
 		await this.clear();
 		logger.debug('Stopped payment notifier');

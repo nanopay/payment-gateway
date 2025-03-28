@@ -4,7 +4,7 @@ import { Invoice, MessageBody, Payment, Service, Webhook } from '../types';
 import { rawToNano } from '../utils';
 import { logger } from '../logger';
 import { INVOICE_MIN_AMOUNT, MAX_PAYMENTS_PER_INVOICE } from '../constants';
-import { PaymentNotifier } from './payment-notifier';
+import { PaymentNotifier, PaymentNotifierCloseReason } from './payment-notifier';
 
 export class PaymentListener extends DurableObject<Env> {
 	private nanoWebsocket: NanoWebsocket;
@@ -114,10 +114,10 @@ export class PaymentListener extends DurableObject<Env> {
 		}, 0);
 
 		if (paid_total >= invoice.price) {
-			await this.removePendingInvoice(invoice.id, invoice.pay_address);
+			await this.removePendingInvoice(invoice.id, invoice.pay_address, 'PAID');
 			await this.paymentReceiver(payments, invoice);
 		} else if (payments.length >= MAX_PAYMENTS_PER_INVOICE) {
-			await this.removePendingInvoice(invoice.id, invoice.pay_address);
+			await this.removePendingInvoice(invoice.id, invoice.pay_address, 'TOO_MANY_PAYMENTS');
 			logger.warn(`Max payments reached for invoice: ${invoice.id}`, {
 				invoice,
 				payments,
@@ -125,10 +125,10 @@ export class PaymentListener extends DurableObject<Env> {
 		}
 	}
 
-	private async removePendingInvoice(invoiceId: string, payAddress: string) {
+	private async removePendingInvoice(invoiceId: string, payAddress: string, reason: PaymentNotifierCloseReason) {
 		this.nanoWebsocket.unsubscribe(payAddress);
 		this.pendingInvoices = this.pendingInvoices.filter((activeInvoice) => activeInvoice.id !== invoiceId);
-		await this.stopPaymentNotifier(invoiceId);
+		await this.stopPaymentNotifier(invoiceId, reason);
 	}
 
 	private async paymentWrite(payment: Payment, invoice: Invoice, service: Service, webhooks: Webhook[]) {
@@ -147,10 +147,10 @@ export class PaymentListener extends DurableObject<Env> {
 		await paymentNotifier.start();
 	}
 
-	private async stopPaymentNotifier(invoiceId: string) {
+	private async stopPaymentNotifier(invoiceId: string, reason: PaymentNotifierCloseReason) {
 		const notifierId = this.notifierNamespace.idFromName(invoiceId);
 		const paymentNotifier = this.notifierNamespace.get(notifierId);
-		await paymentNotifier.stop();
+		await paymentNotifier.stop(reason);
 	}
 
 	private async paymentNotify(payment: Payment, invoiceId: string) {
@@ -179,12 +179,12 @@ export class PaymentListener extends DurableObject<Env> {
 			Alarm: Expire invoices, keep websocket connection alive or close it
 		*/
 		for (const activeInvoice of this.pendingInvoices) {
-			const expired = new Date(activeInvoice.expiresAt).getTime() < Date.now();
+			const expired = new Date(activeInvoice.expiresAt).getTime() <= Date.now();
 			if (expired) {
 				logger.info(`Invoice expired: ${activeInvoice.id}`, {
 					activeInvoice,
 				});
-				await this.removePendingInvoice(activeInvoice.id, activeInvoice.payAddress);
+				await this.removePendingInvoice(activeInvoice.id, activeInvoice.payAddress, 'EXPIRED');
 			}
 		}
 		if (this.pendingInvoices.length > 0) {
