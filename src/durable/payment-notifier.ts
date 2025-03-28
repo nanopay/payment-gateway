@@ -77,14 +77,11 @@ export class PaymentNotifier extends DurableObject<Env> {
 			return new Response('too many sessions', { status: 503 });
 		}
 
-		// To accept the WebSocket request, we create a WebSocketPair
-		const pair = new WebSocketPair();
+		const [client, server] = Object.values(new WebSocketPair());
 
-		// We're going to take pair[1] as our end, and return pair[0] to the client.
-		await this.handleSession(pair[1]);
+		await this.handleSession(server);
 
-		// Now we return the other end of the pair to the client.
-		return new Response(null, { status: 101, webSocket: pair[0] });
+		return new Response(null, { status: 101, webSocket: client });
 	}
 
 	async start() {
