@@ -176,32 +176,43 @@ export class PaymentListener extends DurableObject<Env> {
 		});
 	}
 
-	async alarm() {
-		/*
-			Alarm: Expire invoices, keep websocket connection alive or close it
-		*/
+	private async removeExpiredInvoices() {
+		let promises = [];
 		for (const [id, invoice] of this.pendingInvoices) {
 			const expired = new Date(invoice.expiresAt).getTime() <= Date.now();
 			if (expired) {
 				logger.info(`Invoice expired: ${id}`, {
 					invoice,
 				});
-				await this.removePendingInvoice(id, 'EXPIRED');
+				promises.push(this.removePendingInvoice(id, 'EXPIRED'));
 			}
 		}
-		if (this.pendingInvoices.size > 0) {
-			const currentAlarm = await this.ctx.storage.getAlarm();
-			if (!currentAlarm) {
-				const nearestExpiresAt = Math.min(
-					...Array.from(this.pendingInvoices.values()).map((invoice) => new Date(invoice.expiresAt).getTime())
-				);
-				const defaultScheduledTime = Date.now() + 1000 * 30; // 30 seconds
-				const scheduledTime = nearestExpiresAt < defaultScheduledTime ? nearestExpiresAt : defaultScheduledTime;
+		await Promise.all(promises);
+	}
 
-				this.ctx.storage.setAlarm(scheduledTime);
-			}
-		} else {
-			this.nanoWebsocket.close();
+	private async keepAlive() {
+		const currentAlarm = await this.ctx.storage.getAlarm();
+		if (!currentAlarm) {
+			const nearestExpiresAt = Math.min(
+				...Array.from(this.pendingInvoices.values()).map((invoice) => new Date(invoice.expiresAt).getTime())
+			);
+			const defaultScheduledTime = Date.now() + 1000 * 30; // 30 seconds
+			const scheduledTime = nearestExpiresAt < defaultScheduledTime ? nearestExpiresAt : defaultScheduledTime;
+
+			await this.ctx.storage.setAlarm(scheduledTime);
 		}
+	}
+
+	async alarm() {
+		await this.removeExpiredInvoices().catch((e) => {
+			logger.error('Error removing expired invoices', e);
+		});
+
+		if (this.pendingInvoices.size > 0) {
+			await this.keepAlive();
+			return;
+		}
+
+		this.nanoWebsocket.close();
 	}
 }
