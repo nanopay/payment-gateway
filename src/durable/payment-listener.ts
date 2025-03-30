@@ -5,6 +5,7 @@ import { rawToNano } from '../utils';
 import { logger } from '../logger';
 import { INVOICE_MIN_AMOUNT, MAX_PAYMENTS_PER_INVOICE } from '../constants';
 import { PaymentNotifier, PaymentNotifierCloseReason } from './payment-notifier';
+import BigNumber from 'bignumber.js';
 
 export class PaymentListener extends DurableObject<Env> {
 	private nanoWebsocket: NanoWebsocket;
@@ -109,10 +110,8 @@ export class PaymentListener extends DurableObject<Env> {
 		await this.paymentWrite(newPayment, invoice, service, webhooks);
 
 		const paid_total = Array.from(payments.values()).reduce((acc, payment) => {
-			return acc + payment.amount;
+			return BigNumber(acc).plus(payment.amount).toNumber();
 		}, 0);
-
-		console.log({ paid_total });
 
 		if (paid_total >= invoice.price) {
 			await this.removePendingInvoice(invoice.id, invoice.pay_address, 'PAID');
