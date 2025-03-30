@@ -39,6 +39,9 @@ export class PaymentNotifier extends DurableObject<Env> {
 		this.state.getWebSockets().forEach((webSocket) => {
 			this.sessions.add(webSocket);
 		});
+
+		const heartbeat = new WebSocketRequestResponsePair('ping', 'pong');
+		this.state.setWebSocketAutoResponse(heartbeat);
 	}
 
 	async fetch(request: Request) {
