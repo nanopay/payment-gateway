@@ -8,7 +8,7 @@ import { PaymentNotifier, PaymentNotifierCloseReason } from './payment-notifier'
 
 export class PaymentListener extends DurableObject<Env> {
 	private nanoWebsocket: NanoWebsocket;
-	private pendingInvoices: { id: string; expiresAt: string; payAddress: string; payments: Payment[] }[] = [];
+	private pendingInvoices = new Map<string, { expiresAt: string; payAddress: string; payments: Map<string, Payment> }>();
 	private notifierNamespace: DurableObjectNamespace<PaymentNotifier>;
 
 	/**
@@ -54,11 +54,10 @@ export class PaymentListener extends DurableObject<Env> {
 			this.onPayment(payment, invoice, service, webhooks);
 		});
 
-		this.pendingInvoices.push({
-			id: invoice.id,
+		this.pendingInvoices.set(invoice.id, {
 			expiresAt: invoice.expires_at,
 			payAddress: invoice.pay_address,
-			payments: [],
+			payments: new Map(),
 		});
 
 		await this.startPaymentNotifier(invoice.id);
@@ -98,25 +97,27 @@ export class PaymentListener extends DurableObject<Env> {
 			payment: newPayment,
 		});
 
-		const payments = this.pendingInvoices.find((activeInvoice) => activeInvoice.id === invoice.id)?.payments;
+		const payments = this.pendingInvoices.get(invoice.id)?.payments;
 
 		if (!payments) {
 			throw new Error('Missing payments');
 		}
 
-		payments.push(newPayment);
+		payments.set(newPayment.hash, newPayment);
 
 		await this.paymentNotify(newPayment, invoice.id);
 		await this.paymentWrite(newPayment, invoice, service, webhooks);
 
-		const paid_total = payments.reduce((acc, payment) => {
+		const paid_total = Array.from(payments.values()).reduce((acc, payment) => {
 			return acc + payment.amount;
 		}, 0);
 
+		console.log({ paid_total });
+
 		if (paid_total >= invoice.price) {
 			await this.removePendingInvoice(invoice.id, invoice.pay_address, 'PAID');
-			await this.paymentReceiver(payments, invoice);
-		} else if (payments.length >= MAX_PAYMENTS_PER_INVOICE) {
+			await this.paymentReceiver(Array.from(payments.values()), invoice);
+		} else if (payments.size >= MAX_PAYMENTS_PER_INVOICE) {
 			await this.removePendingInvoice(invoice.id, invoice.pay_address, 'TOO_MANY_PAYMENTS');
 			logger.warn(`Max payments reached for invoice: ${invoice.id}`, {
 				invoice,
@@ -127,7 +128,7 @@ export class PaymentListener extends DurableObject<Env> {
 
 	private async removePendingInvoice(invoiceId: string, payAddress: string, reason: PaymentNotifierCloseReason) {
 		this.nanoWebsocket.unsubscribe(payAddress);
-		this.pendingInvoices = this.pendingInvoices.filter((activeInvoice) => activeInvoice.id !== invoiceId);
+		this.pendingInvoices.delete(invoiceId);
 		await this.stopPaymentNotifier(invoiceId, reason);
 	}
 
@@ -178,22 +179,21 @@ export class PaymentListener extends DurableObject<Env> {
 		/*
 			Alarm: Expire invoices, keep websocket connection alive or close it
 		*/
-		for (const activeInvoice of this.pendingInvoices) {
-			const expired = new Date(activeInvoice.expiresAt).getTime() <= Date.now();
+		for (const [id, invoice] of this.pendingInvoices) {
+			const expired = new Date(invoice.expiresAt).getTime() <= Date.now();
 			if (expired) {
-				logger.info(`Invoice expired: ${activeInvoice.id}`, {
-					activeInvoice,
+				logger.info(`Invoice expired: ${id}`, {
+					invoice,
 				});
-				await this.removePendingInvoice(activeInvoice.id, activeInvoice.payAddress, 'EXPIRED');
+				await this.removePendingInvoice(id, invoice.payAddress, 'EXPIRED');
 			}
 		}
-		if (this.pendingInvoices.length > 0) {
+		if (this.pendingInvoices.size > 0) {
 			const currentAlarm = await this.ctx.storage.getAlarm();
 			if (!currentAlarm) {
-				const nearestExpiresAt = this.pendingInvoices.reduce((acc, activeInvoice) => {
-					return acc < new Date(activeInvoice.expiresAt).getTime() ? acc : new Date(activeInvoice.expiresAt).getTime();
-				}, Infinity);
-
+				const nearestExpiresAt = Math.min(
+					...Array.from(this.pendingInvoices.values()).map((invoice) => new Date(invoice.expiresAt).getTime())
+				);
 				const defaultScheduledTime = Date.now() + 1000 * 30; // 30 seconds
 				const scheduledTime = nearestExpiresAt < defaultScheduledTime ? nearestExpiresAt : defaultScheduledTime;
 
