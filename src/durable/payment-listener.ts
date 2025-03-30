@@ -114,10 +114,10 @@ export class PaymentListener extends DurableObject<Env> {
 		}, 0);
 
 		if (paid_total >= invoice.price) {
-			await this.removePendingInvoice(invoice.id, invoice.pay_address, 'PAID');
+			await this.removePendingInvoice(invoice.id, 'PAID');
 			await this.paymentReceiver(Array.from(payments.values()), invoice);
 		} else if (payments.size >= MAX_PAYMENTS_PER_INVOICE) {
-			await this.removePendingInvoice(invoice.id, invoice.pay_address, 'TOO_MANY_PAYMENTS');
+			await this.removePendingInvoice(invoice.id, 'TOO_MANY_PAYMENTS');
 			logger.warn(`Max payments reached for invoice: ${invoice.id}`, {
 				invoice,
 				payments,
@@ -125,8 +125,10 @@ export class PaymentListener extends DurableObject<Env> {
 		}
 	}
 
-	private async removePendingInvoice(invoiceId: string, payAddress: string, reason: PaymentNotifierCloseReason) {
-		this.nanoWebsocket.unsubscribe(payAddress);
+	private async removePendingInvoice(invoiceId: string, reason: PaymentNotifierCloseReason) {
+		const invoice = this.pendingInvoices.get(invoiceId);
+		if (!invoice) return;
+		this.nanoWebsocket.unsubscribe(invoice.payAddress);
 		this.pendingInvoices.delete(invoiceId);
 		await this.stopPaymentNotifier(invoiceId, reason);
 	}
@@ -184,7 +186,7 @@ export class PaymentListener extends DurableObject<Env> {
 				logger.info(`Invoice expired: ${id}`, {
 					invoice,
 				});
-				await this.removePendingInvoice(id, invoice.payAddress, 'EXPIRED');
+				await this.removePendingInvoice(id, 'EXPIRED');
 			}
 		}
 		if (this.pendingInvoices.size > 0) {
