@@ -2,7 +2,7 @@ name = "payment-gateway"
 main = "src/index.ts"
 compatibility_date = "2024-07-12"
 
-logpush = true
+logpush = false
 
 [[queues.producers]]
   queue = "payment-listener-queue"
