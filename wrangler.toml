@@ -85,7 +85,7 @@ class_name = "PaymentNotifier"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["PaymentListenerDurable"]
+new_sqlite_classes = ["PaymentListenerDurable"]
 
 [[migrations]]
 tag = "v2"
@@ -93,4 +93,4 @@ renamed_classes = [{from = "PaymentListenerDurable", to = "PaymentListener" }]
 
 [[migrations]]
 tag = "v3"
-new_classes = ["PaymentNotifier"]
+new_sqlite_classes = ["PaymentNotifier"]
